@@ -13,6 +13,7 @@ import './views/report-view';
 import './views/login-view';
 import './components/loading-overlay';
 import './components/modal-element';
+import './views/search-history-view'; 
 
 @customElement('my-app')
 class MyApp extends LitElement {

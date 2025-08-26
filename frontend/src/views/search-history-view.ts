@@ -140,9 +140,9 @@ export class SearchHistoryView extends LitElement {
     }
   }
 
-  handleViewReport(item: SearchHistoryEntry) {
+   handleViewReport(item: SearchHistoryEntry) {
     if (item.resultType === 'empty') return;
-    
+
     stateService.persons = item.response.documents.map((p: any, i: number) => ({
       ...p,
       id: `person_${Date.now()}_${i}`
@@ -150,7 +150,11 @@ export class SearchHistoryView extends LitElement {
     stateService.searchQuery = item.keyword;
     stateService.searchType = item.type;
 
-    Router.go(`/report/${stateService.persons[0].id}`);
+    if (item.resultType === 'set') {
+      Router.go('/');
+    } else {
+      Router.go(`/report/${stateService.persons[0].id}`);
+    }
   }
 
   renderType(type: string) {
