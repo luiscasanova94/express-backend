@@ -1,10 +1,13 @@
-import { LitElement, html, css, unsafeCSS } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
-import mainStyles from '../styles/main.css?inline';
+import { LitElement, html, css } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
+import { Router } from '@vaadin/router';
 
 @customElement('app-sidebar')
 export class AppSidebar extends LitElement {
   @property({ type: Boolean, reflect: true }) open = false;
+  
+  // **Añadimos un estado para la ruta actual**
+  @state() private _currentPath = window.location.pathname;
 
   static styles = css`
     :host {
@@ -73,14 +76,35 @@ export class AppSidebar extends LitElement {
     }
   `;
 
-  render() {
-    const currentPath = window.location.pathname;
+  // **Función para manejar el cambio de ruta**
+  private handleLocationChanged = (e: CustomEvent) => {
+    this._currentPath = e.detail.location.pathname;
+  };
 
+  // **Nos suscribimos al evento cuando el componente se conecta al DOM**
+  connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener(
+      'vaadin-router-location-changed',
+      this.handleLocationChanged
+    );
+  }
+
+  // **Nos desuscribimos cuando el componente se desconecta para evitar fugas de memoria**
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener(
+      'vaadin-router-location-changed',
+      this.handleLocationChanged
+    );
+  }
+  
+  render() {
     return html`
       <div class="sidebar-content">
         <ul class="menu-list">
           <li class="menu-item">
-            <a href="/" class="${currentPath === '/' ? 'active' : ''}">
+            <a href="/" class="${this._currentPath === '/' ? 'active' : ''}">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
               </svg>
@@ -88,13 +112,13 @@ export class AppSidebar extends LitElement {
             </a>
           </li>
           <li class="menu-item">
-  <a href="/search-history" class="${currentPath === '/search-history' ? 'active' : ''}">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    <span>Search History</span>
-  </a>
-</li>
+            <a href="/search-history" class="${this._currentPath === '/search-history' ? 'active' : ''}">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Search History</span>
+            </a>
+          </li>
         </ul>
       </div>
     `;
