@@ -2,6 +2,7 @@ import { LitElement, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PersonService } from '../services/person.service';
 import { stateService } from '../services/state.service';
+import { searchHistoryService } from '../services/search-history.service';
 import '../components/search-form';
 import '../components/loading-overlay';
 import '../components/modal-element';
@@ -31,16 +32,16 @@ export class HomeView extends LitElement {
       },
     });
   }
-  
+
   connectedCallback() {
     super.connectedCallback();
     this.searchResults = stateService.persons;
     this.searchQuery = stateService.searchQuery;
-    
+
     if (this.searchQuery) {
       this.hasSearched = true;
     }
-    
+
     stateService.subscribe(this._subscription);
   }
 
@@ -48,7 +49,7 @@ export class HomeView extends LitElement {
     super.disconnectedCallback();
     stateService.unsubscribe(this._subscription);
   }
-  
+
    async _handleSearch(e: CustomEvent<{ type: string; value: string | any; filters?: any }>) {
     const { type, value, filters } = e.detail;
     stateService.loading = true;
@@ -59,7 +60,7 @@ export class HomeView extends LitElement {
     this.searchQuery = value;
     this.searchResults = []; 
     this.hasSearched = true;
-    
+
     await this.updateComplete;
 
     const resultsView = this.querySelector('results-view');
@@ -67,7 +68,7 @@ export class HomeView extends LitElement {
     if (resultsTitle) {
       resultsTitle.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    
+
     try {
       let results: any = []; 
       if (type !== 'phone' && type !== 'address' && type !== 'name' && type !== 'email') {
@@ -88,13 +89,28 @@ export class HomeView extends LitElement {
           results = await this.personService.findByEmail(value);
           break;
       }
-      
+
+      // --- 🚀 Guardar historial de búsqueda ---
+      const resultType = results.count === 0 ? 'empty' : results.count === 1 ? 'single' : 'set';
+      const keyword = typeof value === 'object' ? value.properties?.full_address || JSON.stringify(value) : value;
+
+      const historyData = {
+        date: new Date().toISOString(),
+        keyword: keyword,
+        type: type,
+        resultType: resultType,
+        response: results,
+        state: 'active'
+      };
+
+      await searchHistoryService.saveSearch(historyData);
+      // --- Fin de la lógica del historial ---
+
       if (results.count > 0 && results.documents.length > 0) {
         const personsWithInternalId = results.documents.map((person: Person, index: number) => ({
           ...person,
           id: `person_${Date.now()}_${index}` 
         }));
-        
 
         stateService.persons = personsWithInternalId;
 
