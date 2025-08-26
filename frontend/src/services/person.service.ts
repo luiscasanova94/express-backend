@@ -1,7 +1,7 @@
 import { ApiClient } from './api.service';
 import { PersonSearchResponse } from '../interfaces/person.interface';
 import { ApiClientOptions } from '../interfaces/api.interface';
-import { personApiFields, personApiLimit } from '../config/api-fields.config';
+import { personApiFields } from '../config/api-fields.config';
 import { PersonApiField } from '../interfaces/api-fields.interface';
 
 export class PersonService {
@@ -27,9 +27,10 @@ export class PersonService {
     return result;
   }
 
-  private createRequestBody(filter: any, query?: string) {
+  private createRequestBody(filter: any, query?: string, limit?: number, offset?: number, sort?: any) {
     const body: any = {
-      limit: personApiLimit,
+      limit: limit || 5,
+      offset: offset || 0,
       fields: this.flattenFieldNames(personApiFields),
       packages: this.requiredPackages,
     };
@@ -39,27 +40,30 @@ export class PersonService {
     if (query) {
       body.query = query;
     }
+    if (sort) {
+      body.sort = sort;
+    }
     return body;
   }
 
-  public findByName(name: string, filters?: any): Promise<PersonSearchResponse> {
-    const body = this.createRequestBody(filters, name);
+  public findByName(name: string, filters?: any, limit?: number, offset?: number, sort?: any): Promise<PersonSearchResponse> {
+    const body = this.createRequestBody(filters, name, limit, offset, sort);
     return this.apiClient.post<PersonSearchResponse>(this.searchEndpoint, body);
   }
 
-  public findByEmail(email: string): Promise<PersonSearchResponse> {
+  public findByEmail(email: string, limit?: number, offset?: number, sort?: any): Promise<PersonSearchResponse> {
     const filter = { relation: 'matches', attribute: 'emails.address', value: email };
-    const body = this.createRequestBody(filter);
+    const body = this.createRequestBody(filter, undefined, limit, offset, sort);
     return this.apiClient.post<PersonSearchResponse>(this.searchEndpoint, body);
   }
 
-  public findByPhone(phone: string): Promise<PersonSearchResponse> {
+  public findByPhone(phone: string, limit?: number, offset?: number, sort?: any): Promise<PersonSearchResponse> {
     const filter = { relation: 'matches', attribute: 'cell_phones.phone', value: phone };
-    const body = this.createRequestBody(filter);
+    const body = this.createRequestBody(filter, undefined, limit, offset, sort);
     return this.apiClient.post<PersonSearchResponse>(this.searchEndpoint, body);
   }
 
-  public findByAddress(address: any): Promise<PersonSearchResponse> {
+  public findByAddress(address: any, limit?: number, offset?: number, sort?: any): Promise<PersonSearchResponse> {
     const properties = address.properties;
     const street = properties?.address_line1;
     
@@ -77,7 +81,7 @@ export class PersonService {
         attribute: "street",
         value: street.toLowerCase(),
       };
-      const body = this.createRequestBody(filter, fullAddressWithoutCountry);
+      const body = this.createRequestBody(filter, fullAddressWithoutCountry, limit, offset, sort);
       return this.apiClient.post<PersonSearchResponse>(this.searchEndpoint, body);
     } else {
       throw new Error('Invalid address object: missing address properties');

@@ -15,6 +15,10 @@ export class HomeView extends LitElement {
   @state() private searchResults: Person[] | null = null;
   @state() private searchQuery: string | any = null;
   @state() private hasSearched = false;
+  @state() private totalResults = 0;
+  @state() private currentPage = 1;
+  @state() private limit = 5;
+  @state() private sort: any = { first_name: 'asc' };
 
   private _subscription = () => {
     this.searchResults = stateService.persons;
@@ -50,17 +54,102 @@ export class HomeView extends LitElement {
     stateService.unsubscribe(this._subscription);
   }
 
-   async _handleSearch(e: CustomEvent<{ type: string; value: string | any; filters?: any }>) {
+  private async executeSearch(page = 1) {
+    stateService.loading = true;
+    this.currentPage = page;
+    const offset = (this.currentPage - 1) * this.limit;
+
+    try {
+      let results: any = [];
+      const { searchType, searchQuery, searchFilters } = (stateService as any);
+
+      if (!searchType || !searchQuery) {
+          stateService.loading = false;
+          return;
+      }
+
+      switch (searchType) {
+        case 'phone':
+          results = await this.personService.findByPhone(searchQuery, this.limit, offset, this.sort);
+          break;
+        case 'address':
+          results = await this.personService.findByAddress(searchQuery, this.limit, offset, this.sort);
+          break;
+        case 'name':
+          results = await this.personService.findByName(searchQuery, searchFilters, this.limit, offset, this.sort);
+          break;
+        case 'email':
+          results = await this.personService.findByEmail(searchQuery, this.limit, offset, this.sort);
+          break;
+      }
+
+      if (results.documents && results.documents.length > 0) {
+        if (searchType === 'phone') {
+            results.documents.forEach((person: Person) => {
+              if (!person.cell_phones) person.cell_phones = [];
+              const phoneExists = person.cell_phones.some(p => p.phone === searchQuery);
+              if (!phoneExists) {
+                person.cell_phones.unshift({ phone: searchQuery, active: true });
+              }
+            });
+          } else if (searchType === 'email') {
+            results.documents.forEach((person: Person) => {
+              if (!person.emails) person.emails = [];
+              const emailExists = person.emails.some(e => e.address === searchQuery);
+              if (!emailExists) {
+                person.emails.unshift({ address: searchQuery });
+              }
+            });
+          }
+      }
+
+      if (page === 1) {
+          const resultType = results.count === 0 ? 'empty' : results.count === 1 ? 'single' : 'set';
+          const keyword = typeof searchQuery === 'object' ? searchQuery.properties?.full_address || JSON.stringify(searchQuery) : searchQuery;
+
+          const historyData = {
+            date: new Date().toISOString(),
+            keyword: keyword,
+            type: searchType,
+            resultType: resultType,
+            response: results,
+            state: 'active'
+          };
+          await searchHistoryService.saveSearch(historyData);
+      }
+
+      if (results.count > 0 && results.documents.length > 0) {
+        const personsWithInternalId = results.documents.map((person: Person, index: number) => ({
+          ...person,
+          id: `person_${Date.now()}_${index}` 
+        }));
+        stateService.persons = personsWithInternalId;
+        this.totalResults = results.count;
+      } else {
+        stateService.persons = [];
+        this.totalResults = 0;
+      }
+    } catch (error: any) {
+      stateService.error = error.message || 'Search failed. Please try again later.';
+    } finally {
+      stateService.loading = false;
+    }
+  }
+
+  async _handleSearch(e: CustomEvent<{ type: string; value: string | any; filters?: any }>) {
     const { type, value, filters } = e.detail;
     stateService.loading = true;
     stateService.error = null;
     stateService.searchQuery = value;
     stateService.searchType = type;
+    (stateService as any).searchFilters = filters;
     stateService.persons = []; 
-    this.searchQuery = value;
-    this.searchResults = []; 
     this.hasSearched = true;
 
+    this.currentPage = 1;
+    this.limit = 5;
+    this.sort = { first_name: 'asc' };
+    
     await this.updateComplete;
 
     const resultsView = this.querySelector('results-view');
@@ -69,77 +158,15 @@ export class HomeView extends LitElement {
       resultsTitle.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    try {
-      let results: any = []; 
-      if (type !== 'phone' && type !== 'address' && type !== 'name' && type !== 'email') {
-        throw new Error('Type of search not valid');
-      }
+    await this.executeSearch(1);
+  }
 
-      switch (type) {
-        case 'phone':
-          results = await this.personService.findByPhone(value);
-          break;
-        case 'address':
-          results = await this.personService.findByAddress(value);
-          break;
-        case 'name':
-          results = await this.personService.findByName(value, filters);
-          break;
-        case 'email':
-          results = await this.personService.findByEmail(value);
-          break;
-      }
-      
-      if (results.documents && results.documents.length > 0) {
-        if (type === 'phone') {
-          results.documents.forEach((person: Person) => {
-            if (!person.cell_phones) person.cell_phones = [];
-            const phoneExists = person.cell_phones.some(p => p.phone === value);
-            if (!phoneExists) {
-              person.cell_phones.unshift({ phone: value, active: true });
-            }
-          });
-        } else if (type === 'email') {
-          results.documents.forEach((person: Person) => {
-            if (!person.emails) person.emails = [];
-            const emailExists = person.emails.some(e => e.address === value);
-            if (!emailExists) {
-              person.emails.unshift({ address: value });
-            }
-          });
-        }
-      }
-      
-      const resultType = results.count === 0 ? 'empty' : results.count === 1 ? 'single' : 'set';
-      const keyword = typeof value === 'object' ? value.properties?.full_address || JSON.stringify(value) : value;
-
-      const historyData = {
-        date: new Date().toISOString(),
-        keyword: keyword,
-        type: type,
-        resultType: resultType,
-        response: results,
-        state: 'active'
-      };
-
-      await searchHistoryService.saveSearch(historyData);
-
-      if (results.count > 0 && results.documents.length > 0) {
-        const personsWithInternalId = results.documents.map((person: Person, index: number) => ({
-          ...person,
-          id: `person_${Date.now()}_${index}` 
-        }));
-
-        stateService.persons = personsWithInternalId;
-
-      } else {
-        stateService.persons = [];
-      }
-    } catch (error: any) {
-      stateService.error = error.message || 'Search failed. Please try again later.';
-    } finally {
-      stateService.loading = false;
-    }
+  private async _handleOptionsChange(e: CustomEvent) {
+    const { page, limit, sort } = e.detail;
+    if (limit !== undefined) this.limit = limit;
+    if (sort !== undefined) this.sort = sort;
+    
+    await this.executeSearch(page || this.currentPage);
   }
 
   render() {
@@ -154,6 +181,11 @@ export class HomeView extends LitElement {
           .searchQuery=${this.searchQuery}
           .searchType=${stateService.searchType}
           ?isLoading=${stateService.loading}
+          .totalResults=${this.totalResults}
+          .currentPage=${this.currentPage}
+          .limit=${this.limit}
+          .sort=${this.sort}
+          @options-changed=${this._handleOptionsChange}
         ></results-view>
       ` : ''}
 
