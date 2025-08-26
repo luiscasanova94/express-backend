@@ -18,7 +18,18 @@ class AuthService {
     localStorage.setItem('authToken', this.token!);
   }
 
-  logout(): void {
+  async logout(): Promise<void> {
+    if (this.token) {
+      try {
+        await axios.post(`${API_BASE_URL}/logout`, {}, {
+          headers: {
+            'Authorization': `Bearer ${this.token}`
+          }
+        });
+      } catch (error) {
+        console.error('Logout failed:', error);
+      }
+    }
     this.token = null;
     localStorage.removeItem('authToken');
   }

@@ -54,8 +54,8 @@ export class AppHeader extends LitElement {
     this.isAuthenticated = await authService.isAuthenticated();
   }
 
-  private handleLogout() {
-    authService.logout();
+  private async handleLogout() {
+    await authService.logout();
     Router.go('/login');
   }
 
