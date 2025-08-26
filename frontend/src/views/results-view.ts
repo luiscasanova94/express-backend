@@ -13,6 +13,7 @@ export class ResultsView extends LitElement {
   @property({ type: Number }) currentPage = 1;
   @property({ type: Number }) limit = 5;
   @property({ type: Object }) sort: any = {};
+  @property({ type: String }) source: 'manual' | 'widget' = 'manual';
 
   static styles = css`
     .results-container {
@@ -20,7 +21,6 @@ export class ResultsView extends LitElement {
       margin: 2rem auto;
       padding: 1rem;
     }
-
     .results-title {
       color: white;
       text-align: center;
@@ -93,28 +93,22 @@ export class ResultsView extends LitElement {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-
-    /* --- CAMBIO VISUAL AQUÍ --- */
     .controls-container {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1.5rem;
-      /* Se eliminaron background-color, border, padding y border-radius */
     }
-
     .control-group {
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
-
     .control-group label {
-      color: #ffffff; /* Texto blanco */
+      color: #ffffff;
       font-size: 0.9rem;
       font-weight: 500;
     }
-
     .control-select {
       background-color: #3d3d3d;
       color: white;
@@ -123,14 +117,12 @@ export class ResultsView extends LitElement {
       padding: 0.5rem;
       cursor: pointer;
     }
-    
     .pagination-container {
         display: flex;
         justify-content: center;
         align-items: center;
         margin-top: 2rem;
     }
-
     .pagination-button {
         background-color: #3d3d3d;
         color: white;
@@ -141,16 +133,13 @@ export class ResultsView extends LitElement {
         margin: 0 0.25rem;
         transition: background-color 0.2s;
     }
-    
     .pagination-button:hover:not(:disabled) {
         background-color: #eb4538;
     }
-    
     .pagination-button:disabled {
         opacity: 0.5;
         cursor: not-allowed;
     }
-
     .page-info {
         color: #ccc;
         margin: 0 1rem;
@@ -208,9 +197,11 @@ export class ResultsView extends LitElement {
 
     return html`
       <div class="results-container">
-        <h1 class="results-title py-10" id="results-title">Search Results for "${displayQuery}"</h1>
+        ${this.source === 'manual' ? html`
+          <h1 class="results-title py-10" id="results-title">Search Results for "${displayQuery}"</h1>
+        ` : ''}
 
-        ${!this.isLoading && this.totalResults > 0 ? html`
+        ${!this.isLoading && this.totalResults > 0 && this.source === 'manual' ? html`
           <div class="controls-container">
             <div class="control-group">
               <label for="sort-by">Sort by:</label>
@@ -258,7 +249,7 @@ export class ResultsView extends LitElement {
                     </div>
                 `)}
 
-                ${this.totalPages > 1 ? html`
+                ${this.totalPages > 1 && this.source === 'manual' ? html`
                     <div class="pagination-container">
                         <button class="pagination-button" ?disabled=${this.currentPage === 1} @click=${() => this._onPageChange(this.currentPage - 1)}>
                             &laquo; Previous

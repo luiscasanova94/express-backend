@@ -2,11 +2,12 @@ import { LitElement, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { PersonService } from '../services/person.service';
 import { stateService } from '../services/state.service';
-import { searchHistoryService } from '../services/search-history.service';
+import { searchHistoryService, SearchHistoryEntry } from '../services/search-history.service';
 import '../components/search-form';
 import '../components/loading-overlay';
 import '../components/modal-element';
 import './results-view';
+import '../components/recent-searches';
 import { Person } from '../interfaces/person.interface.js';
 
 @customElement('home-view')
@@ -15,10 +16,13 @@ export class HomeView extends LitElement {
   @state() private searchResults: Person[] | null = null;
   @state() private searchQuery: string | any = null;
   @state() private hasSearched = false;
+  @state() private newSearchPerformed = false; 
   @state() private totalResults = 0;
   @state() private currentPage = 1;
   @state() private limit = 5;
   @state() private sort: any = { first_name: 'asc' };
+  @state() private recentHistory: SearchHistoryEntry[] = [];
+  @state() private searchSource: 'manual' | 'widget' = 'manual';
 
   private _subscription = () => {
     this.searchResults = stateService.persons;
@@ -37,13 +41,15 @@ export class HomeView extends LitElement {
     });
   }
 
-  connectedCallback() {
+  async connectedCallback() {
     super.connectedCallback();
     this.searchResults = stateService.persons;
     this.searchQuery = stateService.searchQuery;
 
-    if (this.searchQuery) {
+    if (this.searchQuery && this.searchResults && this.searchResults.length > 0) {
       this.hasSearched = true;
+    } else {
+      await this.fetchRecentHistory();
     }
 
     stateService.subscribe(this._subscription);
@@ -54,6 +60,40 @@ export class HomeView extends LitElement {
     stateService.unsubscribe(this._subscription);
   }
 
+  async fetchRecentHistory() {
+    try {
+      const response = await searchHistoryService.getHistory(1, 4);
+      this.recentHistory = response.history;
+    } catch (error) {
+      console.error("Could not fetch recent history", error);
+    }
+  }
+
+  private _handleRerunSearch(e: CustomEvent<SearchHistoryEntry>) {
+    const item = e.detail;
+    if (item.resultType === 'empty') return;
+    
+    this.searchSource = 'widget';
+
+    const results = item.response;
+    
+    stateService.persons = results.documents.map((p: any, i: number) => ({
+      ...p,
+      id: `person_${Date.now()}_${i}`
+    }));
+    stateService.searchQuery = item.keyword;
+    stateService.searchType = item.type;
+    (stateService as any).searchFilters = null;
+
+    this.totalResults = results.count;
+    this.currentPage = item.page || 1;
+    this.limit = 5;
+    this.sort = item.sort || { first_name: 'asc' };
+
+    this.hasSearched = true;
+    this.newSearchPerformed = false;
+  }
+  
   private async executeSearch(page = 1) {
     stateService.loading = true;
     this.currentPage = page;
@@ -81,26 +121,6 @@ export class HomeView extends LitElement {
         case 'email':
           results = await this.personService.findByEmail(searchQuery, this.limit, offset, this.sort);
           break;
-      }
-
-      if (results.documents && results.documents.length > 0) {
-        if (searchType === 'phone') {
-            results.documents.forEach((person: Person) => {
-              if (!person.cell_phones) person.cell_phones = [];
-              const phoneExists = person.cell_phones.some(p => p.phone === searchQuery);
-              if (!phoneExists) {
-                person.cell_phones.unshift({ phone: searchQuery, active: true });
-              }
-            });
-          } else if (searchType === 'email') {
-            results.documents.forEach((person: Person) => {
-              if (!person.emails) person.emails = [];
-              const emailExists = person.emails.some(e => e.address === searchQuery);
-              if (!emailExists) {
-                person.emails.unshift({ address: searchQuery });
-              }
-            });
-          }
       }
 
       if (page === 1) {
@@ -142,13 +162,18 @@ export class HomeView extends LitElement {
 
   async _handleSearch(e: CustomEvent<{ type: string; value: string | any; filters?: any }>) {
     const { type, value, filters } = e.detail;
+    
+    this.searchSource = 'manual';
+    
     stateService.loading = true;
     stateService.error = null;
     stateService.searchQuery = value;
     stateService.searchType = type;
     (stateService as any).searchFilters = filters;
-    stateService.persons = []; 
+    stateService.persons = [];
+    
     this.hasSearched = true;
+    this.newSearchPerformed = true;
 
     this.currentPage = 1;
     this.limit = 5;
@@ -175,8 +200,17 @@ export class HomeView extends LitElement {
 
   render() {
     return html`
-      <div class="p-8 flex justify-center">
-        <search-form @search-submitted=${this._handleSearch}></search-form>
+      <div class="max-w-[800px] mx-auto px-4 md:px-0">
+        <div class="py-8 flex justify-center">
+            <search-form @search-submitted=${this._handleSearch}></search-form>
+        </div>
+
+        ${!this.newSearchPerformed && this.recentHistory.length > 0 ? html`
+          <recent-searches 
+            .history=${this.recentHistory}
+            @rerun-search=${this._handleRerunSearch}
+          ></recent-searches>
+        ` : ''}
       </div>
 
       ${this.hasSearched ? html`
@@ -184,11 +218,12 @@ export class HomeView extends LitElement {
           .persons=${this.searchResults || []} 
           .searchQuery=${this.searchQuery}
           .searchType=${stateService.searchType}
-          ?isLoading=${stateService.loading}
+          ?isLoading=${this.loading}
           .totalResults=${this.totalResults}
           .currentPage=${this.currentPage}
           .limit=${this.limit}
           .sort=${this.sort}
+          .source=${this.searchSource}
           @options-changed=${this._handleOptionsChange}
         ></results-view>
       ` : ''}

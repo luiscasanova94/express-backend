@@ -6,7 +6,6 @@ import { Router } from '@vaadin/router';
 export class AppSidebar extends LitElement {
   @property({ type: Boolean, reflect: true }) open = false;
   
-  // **Añadimos un estado para la ruta actual**
   @state() private _currentPath = window.location.pathname;
 
   static styles = css`
@@ -76,12 +75,10 @@ export class AppSidebar extends LitElement {
     }
   `;
 
-  // **Función para manejar el cambio de ruta**
   private handleLocationChanged = (e: CustomEvent) => {
     this._currentPath = e.detail.location.pathname;
   };
 
-  // **Nos suscribimos al evento cuando el componente se conecta al DOM**
   connectedCallback() {
     super.connectedCallback();
     window.addEventListener(
@@ -90,7 +87,6 @@ export class AppSidebar extends LitElement {
     );
   }
 
-  // **Nos desuscribimos cuando el componente se desconecta para evitar fugas de memoria**
   disconnectedCallback() {
     super.disconnectedCallback();
     window.removeEventListener(
