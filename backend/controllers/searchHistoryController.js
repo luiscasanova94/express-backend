@@ -2,18 +2,23 @@ const { SearchHistory } = require('../db/models');
 
 exports.createSearchHistory = async (req, res) => {
   try {
-    const { date, keyword, type, resultType, state, response } = req.body;
+    const { date, keyword, type, resultType, state, response, sort, offset, page, count } = req.body;
     const newSearch = await SearchHistory.create({
-      userId: req.user.id, 
+      userId: req.user.id,
       date,
       keyword,
       type,
       resultType,
       state,
-      response 
+      response,
+      sort,
+      offset,
+      page,
+      count
     });
     res.status(201).json(newSearch);
   } catch (error) {
+    console.error('Error creating search history:', error);
     res.status(500).json({ error: 'Error creating search history' });
   }
 };

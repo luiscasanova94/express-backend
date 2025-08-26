@@ -10,6 +10,10 @@ export interface SearchHistoryEntry {
   type: 'phone' | 'email' | 'name' | 'address';
   resultType: 'set' | 'single' | 'empty';
   response: any;
+  sort: any;
+  offset: number;
+  page: number;
+  count: number;
 }
 
 export interface PaginatedHistoryResponse {

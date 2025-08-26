@@ -113,7 +113,11 @@ export class HomeView extends LitElement {
             type: searchType,
             resultType: resultType,
             response: results,
-            state: 'active'
+            state: 'active',
+            sort: this.sort,
+            offset: offset,
+            page: this.currentPage,
+            count: results.count
           };
           await searchHistoryService.saveSearch(historyData);
       }

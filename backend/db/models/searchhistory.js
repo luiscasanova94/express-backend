@@ -18,7 +18,11 @@ module.exports = (sequelize, DataTypes) => {
     type: DataTypes.ENUM('phone', 'email', 'name', 'address'),
     resultType: DataTypes.ENUM('set', 'single', 'empty'),
     state: DataTypes.ENUM('active', 'archived'),
-    response: DataTypes.JSON 
+    response: DataTypes.JSON,
+    sort: DataTypes.JSON,
+    offset: DataTypes.INTEGER,
+    page: DataTypes.INTEGER,
+    count: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'SearchHistory',

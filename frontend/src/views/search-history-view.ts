@@ -119,6 +119,12 @@ export class SearchHistoryView extends LitElement {
         width: 1.25rem;
         height: 1.25rem;
     }
+    .sort-info {
+      font-style: italic;
+      font-size: 0.8rem;
+      color: #9ca3af;
+      text-transform: capitalize;
+    }
   `;
 
   connectedCallback() {
@@ -185,7 +191,9 @@ export class SearchHistoryView extends LitElement {
               <tr>
                 <th>Date</th>
                 <th>Search Keyword</th>
-                <th>Type of Search</th>
+                <th>Type</th>
+                <th>Count</th>
+                <th>Sort</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -195,6 +203,15 @@ export class SearchHistoryView extends LitElement {
                   <td>${new Date(item.date).toLocaleDateString()}</td>
                   <td>${item.keyword}</td>
                   <td>${this.renderType(item.type)}</td>
+                  <td>${item.count}</td>
+                  <td>
+                    ${item.sort ? html`
+                      <div class="sort-info">
+                        ${Object.keys(item.sort)[0].replace('_', ' ')}
+                        (${item.sort[Object.keys(item.sort)[0]]})
+                      </div>
+                    ` : 'N/A'}
+                  </td>
                   <td>
                     ${item.resultType !== 'empty' ? html`
                       <button class="action-button" @click=${() => this.handleViewReport(item)}>
