@@ -198,7 +198,7 @@ export class ResultsView extends LitElement {
     return html`
       <div class="results-container">
         ${this.source === 'manual' ? html`
-          <h1 class="results-title py-10" id="results-title">Search Results for "${displayQuery}"</h1>
+          <h1 class="results-title pt-10" id="results-title">Search Results for "${displayQuery}"</h1>
         ` : ''}
 
         ${!this.isLoading && this.totalResults > 0 && this.source === 'manual' ? html`

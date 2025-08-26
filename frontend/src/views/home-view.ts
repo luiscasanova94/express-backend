@@ -43,15 +43,18 @@ export class HomeView extends LitElement {
 
   async connectedCallback() {
     super.connectedCallback();
+    // No establecer hasSearched aquí para permitir que la lógica de render controle la visibilidad inicial
     this.searchResults = stateService.persons;
     this.searchQuery = stateService.searchQuery;
 
-    if (this.searchQuery && this.searchResults && this.searchResults.length > 0) {
-      this.hasSearched = true;
+    // Si no hay una búsqueda activa en el estado, buscamos el historial reciente
+    if (!this.searchQuery) {
+        await this.fetchRecentHistory();
     } else {
-      await this.fetchRecentHistory();
+        // Si hay una búsqueda, la marcamos como realizada para mostrar los resultados
+        this.hasSearched = true;
     }
-
+    
     stateService.subscribe(this._subscription);
   }
 
@@ -73,7 +76,7 @@ export class HomeView extends LitElement {
     const item = e.detail;
     if (item.resultType === 'empty') return;
     
-    this.searchSource = 'widget';
+    this.searchSource = 'widget'; // Es una búsqueda desde el widget
 
     const results = item.response;
     
@@ -86,12 +89,12 @@ export class HomeView extends LitElement {
     (stateService as any).searchFilters = null;
 
     this.totalResults = results.count;
-    this.currentPage = item.page || 1;
+    this.currentPage = 1;
     this.limit = 5;
     this.sort = item.sort || { first_name: 'asc' };
 
     this.hasSearched = true;
-    this.newSearchPerformed = false;
+    this.newSearchPerformed = false; // Mantenemos el widget visible
   }
   
   private async executeSearch(page = 1) {
@@ -123,10 +126,9 @@ export class HomeView extends LitElement {
           break;
       }
 
-      if (page === 1) {
+      if (this.newSearchPerformed && page === 1) {
           const resultType = results.count === 0 ? 'empty' : results.count === 1 ? 'single' : 'set';
           const keyword = typeof searchQuery === 'object' ? searchQuery.properties?.full_address || JSON.stringify(searchQuery) : searchQuery;
-
           const historyData = {
             date: new Date().toISOString(),
             keyword: keyword,
@@ -163,7 +165,7 @@ export class HomeView extends LitElement {
   async _handleSearch(e: CustomEvent<{ type: string; value: string | any; filters?: any }>) {
     const { type, value, filters } = e.detail;
     
-    this.searchSource = 'manual';
+    this.searchSource = 'manual'; // La búsqueda es manual
     
     stateService.loading = true;
     stateService.error = null;
@@ -173,7 +175,7 @@ export class HomeView extends LitElement {
     stateService.persons = [];
     
     this.hasSearched = true;
-    this.newSearchPerformed = true;
+    this.newSearchPerformed = true; // Oculta el widget
 
     this.currentPage = 1;
     this.limit = 5;
@@ -218,7 +220,7 @@ export class HomeView extends LitElement {
           .persons=${this.searchResults || []} 
           .searchQuery=${this.searchQuery}
           .searchType=${stateService.searchType}
-          ?isLoading=${this.loading}
+          ?isLoading=${this.isLoading}
           .totalResults=${this.totalResults}
           .currentPage=${this.currentPage}
           .limit=${this.limit}
