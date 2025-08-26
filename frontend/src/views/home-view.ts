@@ -89,8 +89,27 @@ export class HomeView extends LitElement {
           results = await this.personService.findByEmail(value);
           break;
       }
-
-      // --- 🚀 Guardar historial de búsqueda ---
+      
+      if (results.documents && results.documents.length > 0) {
+        if (type === 'phone') {
+          results.documents.forEach((person: Person) => {
+            if (!person.cell_phones) person.cell_phones = [];
+            const phoneExists = person.cell_phones.some(p => p.phone === value);
+            if (!phoneExists) {
+              person.cell_phones.unshift({ phone: value, active: true });
+            }
+          });
+        } else if (type === 'email') {
+          results.documents.forEach((person: Person) => {
+            if (!person.emails) person.emails = [];
+            const emailExists = person.emails.some(e => e.address === value);
+            if (!emailExists) {
+              person.emails.unshift({ address: value });
+            }
+          });
+        }
+      }
+      
       const resultType = results.count === 0 ? 'empty' : results.count === 1 ? 'single' : 'set';
       const keyword = typeof value === 'object' ? value.properties?.full_address || JSON.stringify(value) : value;
 
@@ -104,7 +123,6 @@ export class HomeView extends LitElement {
       };
 
       await searchHistoryService.saveSearch(historyData);
-      // --- Fin de la lógica del historial ---
 
       if (results.count > 0 && results.documents.length > 0) {
         const personsWithInternalId = results.documents.map((person: Person, index: number) => ({
