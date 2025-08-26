@@ -1,9 +1,8 @@
-// frontend/src/my-app.ts
-
 import { LitElement, html, css, unsafeCSS } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { Router } from '@vaadin/router';
 import { authGuard } from './router/auth.guard';
+import { authService } from './services/auth.service';
 import mainStyles from './styles/main.css?inline';
 import './components/app-header';
 import './components/app-footer';
@@ -18,6 +17,7 @@ import './components/modal-element';
 @customElement('my-app')
 class MyApp extends LitElement {
   @state() private isSidebarOpen = false;
+  @state() private isAuthenticated = false; 
 
   static styles = css`
     :host {
@@ -29,14 +29,27 @@ class MyApp extends LitElement {
 
     .content-wrapper {
       display: flex;
-      flex: 1;
+      flex: 1; 
       position: relative;
+    }
+
+    app-sidebar {
+      width: 250px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh; 
+      align-self: flex-start;
     }
 
     main {
       flex-grow: 1;
       padding: 16px;
-      overflow-y: auto;
+      overflow-y: auto; 
+    }
+    
+    main.full-width {
+        width: 100%;
     }
 
     .sidebar-overlay {
@@ -52,10 +65,12 @@ class MyApp extends LitElement {
       transition: opacity 0.3s ease;
     }
 
-    /* Estilos para móviles */
     @media (max-width: 767px) {
       app-sidebar {
-        display: none; /* Ocultar sidebar estática en móvil */
+        position: fixed;
+        height: 100vh;
+        top: 0;
+        z-index: 1000;
       }
       
       .sidebar-overlay.open {
@@ -72,9 +87,20 @@ class MyApp extends LitElement {
     this.addEventListener('toggle-sidebar', this.toggleSidebar);
   }
   
+  async connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener('vaadin-router-location-changed', this.handleAuthChange);
+    await this.handleAuthChange(); 
+  }
+
   disconnectedCallback() {
     super.disconnectedCallback();
     this.removeEventListener('toggle-sidebar', this.toggleSidebar);
+    window.removeEventListener('vaadin-router-location-changed', this.handleAuthChange);
+  }
+  
+  private handleAuthChange = async () => {
+    this.isAuthenticated = await authService.isAuthenticated();
   }
 
   firstUpdated() {
@@ -105,11 +131,15 @@ class MyApp extends LitElement {
   render() {
     return html`
       <app-header></app-header>
+      
       <div class="content-wrapper">
-        <app-sidebar .open=${this.isSidebarOpen}></app-sidebar>
+        ${this.isAuthenticated ? html`<app-sidebar .open=${this.isSidebarOpen}></app-sidebar>` : ''}
+        
         <div class="sidebar-overlay ${this.isSidebarOpen ? 'open' : ''}" @click=${this.toggleSidebar}></div>
-        <main id="outlet"></main>
+        
+        <main id="outlet" class="${!this.isAuthenticated ? 'full-width' : ''}"></main>
       </div>
+
       <app-footer></app-footer>
     `;
   }

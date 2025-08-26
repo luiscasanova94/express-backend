@@ -16,8 +16,6 @@ export class AppHeader extends LitElement {
       padding-top: 1rem;
       padding-bottom: 1rem;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      position: sticky;
-      top: 0;
       z-index: 50;
     }
 
@@ -42,7 +40,7 @@ export class AppHeader extends LitElement {
     }
     
     .hamburger-button {
-      display: none; /* Oculto por defecto */
+      display: none; 
       background: none;
       border: none;
       cursor: pointer;
@@ -60,7 +58,7 @@ export class AppHeader extends LitElement {
         display: block;
       }
       .nav-links {
-          display: none; /* Ocultar enlaces originales en móvil */
+          display: none;
       }
     }
 
