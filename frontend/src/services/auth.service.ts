@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { stateService } from './state.service'; 
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -32,6 +33,7 @@ class AuthService {
     }
     this.token = null;
     localStorage.removeItem('authToken');
+    stateService.clearStateAndStorage();
   }
 
   async isAuthenticated(): Promise<boolean> {

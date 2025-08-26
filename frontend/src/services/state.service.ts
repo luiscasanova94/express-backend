@@ -117,6 +117,15 @@ class StateService {
   private notify() {
     this.subscribers.forEach(callback => callback());
   }
+
+    public clearStateAndStorage() {
+    this._persons = [];
+    this._searchQuery = null;
+    this._searchType = null;
+    localStorage.removeItem(STORAGE_KEY);
+    this.notify();
+  }
+
 }
 
 export const stateService = new StateService();
