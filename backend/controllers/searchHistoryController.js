@@ -21,8 +21,23 @@ exports.createSearchHistory = async (req, res) => {
 
 exports.getAllSearchHistory = async (req, res) => {
   try {
-    const history = await SearchHistory.findAll({ where: { userId: req.user.id } });
-    res.status(200).json(history);
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await SearchHistory.findAndCountAll({
+      where: { userId: req.user.id },
+      limit,
+      offset,
+      order: [['date', 'DESC']]
+    });
+
+    res.status(200).json({
+      totalItems: count,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+      history: rows
+    });
   } catch (error) {
     res.status(500).json({ error: 'Error fetching search history' });
   }

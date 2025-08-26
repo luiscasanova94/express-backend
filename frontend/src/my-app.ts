@@ -120,6 +120,11 @@ class MyApp extends LitElement {
           component: 'report-view',
           action: authGuard,
         },
+        {
+          path: '/search-history',
+          component: 'search-history-view',
+          action: authGuard,
+        },
       ]);
     }
   }
