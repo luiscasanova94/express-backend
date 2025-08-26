@@ -1,11 +1,13 @@
 import { LitElement, html, css, unsafeCSS } from 'lit';
 import { Router } from '@vaadin/router';
+import { authGuard } from './router/auth.guard';
 import mainStyles from './styles/main.css?inline';
 import './components/app-header';
 import './components/app-footer';
 import './views/home-view';
 import './views/about-view';
-import './views/report-view'; 
+import './views/report-view';
+import './views/login-view';
 import './components/loading-overlay';
 import './components/modal-element';
 
@@ -27,9 +29,18 @@ class MyApp extends LitElement {
     const outlet = this.shadowRoot?.getElementById('outlet');
     const router = new Router(outlet);
     router.setRoutes([
-      { path: '/', component: 'home-view' },
+      {
+        path: '/',
+        component: 'home-view',
+        action: authGuard,
+      },
+      { path: '/login', component: 'login-view' },
       { path: '/about', component: 'about-view' },
-      { path: '/report/:id', component: 'report-view' }, 
+      {
+        path: '/report/:id',
+        component: 'report-view',
+        action: authGuard,
+      },
     ]);
   }
 
