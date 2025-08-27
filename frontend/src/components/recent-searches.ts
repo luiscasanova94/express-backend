@@ -9,7 +9,7 @@ export class RecentSearches extends LitElement {
   static styles = css`
     :host {
       display: block;
-      max-width: 800px; /* Ancho alineado con el contenedor de resultados */
+      max-width: 800px;
       margin: 0 auto 2rem auto;
     }
     .widget-container {
@@ -44,7 +44,6 @@ export class RecentSearches extends LitElement {
       list-style: none;
       padding: 0;
       margin: 0;
-      /* --- ESTILOS PARA LA CUADRÍCULA 2x2 --- */
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 1rem;
@@ -64,6 +63,7 @@ export class RecentSearches extends LitElement {
     .item-icon {
       margin-right: 1rem;
       color: #ebb85e;
+      flex-shrink: 0;
     }
     .item-icon svg {
       width: 24px;
@@ -71,24 +71,25 @@ export class RecentSearches extends LitElement {
     }
     .item-details {
       flex-grow: 1;
-      overflow: hidden; /* Para que el text-overflow funcione */
+      overflow: hidden;
     }
     .item-keyword {
       font-weight: 500;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-size: 0.9rem;
     }
     .item-meta {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: #9ca3af;
       text-transform: capitalize;
+      white-space: nowrap;
     }
     
-    /* Media query para dispositivos pequeños */
     @media (max-width: 640px) {
       .history-list {
-        grid-template-columns: 1fr; /* Una columna en móviles */
+        grid-template-columns: 1fr;
       }
     }
   `;
@@ -112,6 +113,13 @@ export class RecentSearches extends LitElement {
     return icons[type as keyof typeof icons] || '';
   }
 
+  private _formatSort(sort: any): string {
+    if (!sort) return '';
+    const key = Object.keys(sort)[0];
+    const direction = sort[key];
+    return `${key.replace('_', ' ')} (${direction})`;
+  }
+
   render() {
     if (this.history.length === 0) {
       return html``;
@@ -128,7 +136,8 @@ export class RecentSearches extends LitElement {
               <div class="item-icon">${this._getIconForType(item.type)}</div>
               <div class="item-details">
                 <div class="item-keyword" title=${item.keyword}>${item.keyword}</div>
-                <div class="item-meta">${item.type} &bull; ${new Date(item.date).toLocaleDateString()}</div>
+                <div class="item-meta">${new Date(item.date).toLocaleDateString()} &bull; ${item.response?.documents?.length || 0} items</div>
+                <div class="item-meta">Sort: ${this._formatSort(item.sort)}</div>
               </div>
             </li>
           `)}

@@ -42,6 +42,7 @@ export class SearchHistoryView extends LitElement {
     }
     th, td {
         padding: 1rem 1.5rem;
+        vertical-align: middle;
     }
     thead {
         background-color: #2a2a2a;
@@ -160,7 +161,6 @@ export class SearchHistoryView extends LitElement {
     stateService.currentPage = 1;
     stateService.sort = item.sort || { first_name: 'asc' };
     
-    // Marcamos que la búsqueda NO es manual para que el widget se muestre en el home
     stateService.newSearchPerformed = false; 
 
     if (item.resultType === 'set') {
@@ -203,7 +203,9 @@ export class SearchHistoryView extends LitElement {
                 <th>Date</th>
                 <th>Search Keyword</th>
                 <th>Type</th>
-                <th>Count</th>
+                <th>Total results</th>
+                <th>Shown results</th>
+                <th>Page Number</th>
                 <th>Sort</th>
                 <th>Action</th>
               </tr>
@@ -215,6 +217,8 @@ export class SearchHistoryView extends LitElement {
                   <td>${item.keyword}</td>
                   <td>${this.renderType(item.type)}</td>
                   <td>${item.count}</td>
+                  <td>${item.response?.documents?.length || 0}</td>
+                  <td>${item.page || 1}</td>
                   <td>
                     ${item.sort ? html`
                       <div class="sort-info">
