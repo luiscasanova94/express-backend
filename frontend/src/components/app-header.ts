@@ -57,7 +57,7 @@ export class AppHeader extends LitElement {
       .hamburger-button {
         display: block;
       }
-      .nav-links {
+      .home-link {
           display: none;
       }
     }
@@ -108,7 +108,7 @@ export class AppHeader extends LitElement {
             </a>
           </div>
           <div class="nav-links">
-            <a href="/">Home</a>
+            <a href="/" class="home-link">Home</a>
             ${this.isAuthenticated
               ? html`<button @click=${this.handleLogout}>Logout</button>`
               : ''}
