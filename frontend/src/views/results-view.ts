@@ -13,7 +13,7 @@ export class ResultsView extends LitElement {
   @property({ type: Number }) currentPage = 1;
   @property({ type: Number }) limit = 5;
   @property({ type: Object }) sort: any = {};
-  @property({ type: String }) source: 'manual' | 'widget' = 'manual';
+  @property({ type: Boolean }) isNewSearch = false; 
 
   static styles = css`
     .results-container {
@@ -197,11 +197,11 @@ export class ResultsView extends LitElement {
 
     return html`
       <div class="results-container">
-        ${this.source === 'manual' ? html`
+        ${this.isNewSearch ? html`
           <h1 class="results-title pt-10" id="results-title">Search Results for "${displayQuery}"</h1>
         ` : ''}
 
-        ${!this.isLoading && this.totalResults > 0 && this.source === 'manual' ? html`
+        ${!this.isLoading && this.totalResults > 0 && this.isNewSearch ? html`
           <div class="controls-container">
             <div class="control-group">
               <label for="sort-by">Sort by:</label>
@@ -249,7 +249,7 @@ export class ResultsView extends LitElement {
                     </div>
                 `)}
 
-                ${this.totalPages > 1 && this.source === 'manual' ? html`
+                ${this.totalPages > 1 && this.isNewSearch ? html`
                     <div class="pagination-container">
                         <button class="pagination-button" ?disabled=${this.currentPage === 1} @click=${() => this._onPageChange(this.currentPage - 1)}>
                             &laquo; Previous

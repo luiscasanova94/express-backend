@@ -156,6 +156,12 @@ export class SearchHistoryView extends LitElement {
     }));
     stateService.searchQuery = item.keyword;
     stateService.searchType = item.type;
+    stateService.totalResults = item.count;
+    stateService.currentPage = 1;
+    stateService.sort = item.sort || { first_name: 'asc' };
+    
+    // Marcamos que la búsqueda NO es manual para que el widget se muestre en el home
+    stateService.newSearchPerformed = false; 
 
     if (item.resultType === 'set') {
       Router.go('/');
@@ -163,10 +169,8 @@ export class SearchHistoryView extends LitElement {
       Router.go(`/report/${stateService.persons[0].id}`);
     }
   }
-
+  
   renderType(type: string) {
-    // --- CORRECCIÓN AQUÍ ---
-    // Verificamos si 'type' es un string válido antes de usarlo.
     if (!type || typeof type !== 'string') {
         return html`<span class="type-badge">N/A</span>`;
     }
@@ -180,7 +184,7 @@ export class SearchHistoryView extends LitElement {
     return html`
       <span class="type-badge">
         ${icons[type as keyof typeof icons] || ''}
-        <span>${type.charAt(0).toUpperCase() + type.slice(1)}</span>
+        <span>${type}</span>
       </span>
     `;
   }
