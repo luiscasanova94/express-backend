@@ -205,7 +205,6 @@ export class SearchHistoryView extends LitElement {
                 <th>Type</th>
                 <th>Total results</th>
                 <th>Shown results</th>
-                <th>Page Number</th>
                 <th>Sort</th>
                 <th>Action</th>
               </tr>
@@ -218,7 +217,6 @@ export class SearchHistoryView extends LitElement {
                   <td>${this.renderType(item.type)}</td>
                   <td>${item.count}</td>
                   <td>${item.response?.documents?.length || 0}</td>
-                  <td>${item.page || 1}</td>
                   <td>
                     ${item.sort ? html`
                       <div class="sort-info">

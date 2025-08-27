@@ -56,6 +56,7 @@ export class RecentSearches extends LitElement {
       border-radius: 6px;
       transition: background-color 0.2s;
       border: 1px solid #444;
+      min-width: 0;
     }
     .history-item:hover {
       background-color: #374151;
@@ -75,10 +76,10 @@ export class RecentSearches extends LitElement {
     }
     .item-keyword {
       font-weight: 500;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       font-size: 0.9rem;
+      /* --- AJUSTE CLAVE AQUÍ --- */
+      white-space: normal; /* Permite que el texto salte a otra línea */
+      word-break: break-word; /* Rompe palabras largas si es necesario */
     }
     .item-meta {
       font-size: 0.75rem;
