@@ -99,6 +99,30 @@ export class HomeView extends LitElement {
           break;
       }
 
+     
+      if (results.documents) {
+        results.documents.forEach((person: Person) => {
+          if (searchType === 'phone') {
+            const phoneExists = person.cell_phones?.some(phone => phone.phone === searchQuery);
+            if (!phoneExists) {
+              if (!person.cell_phones) {
+                person.cell_phones = [];
+              }
+              person.cell_phones.push({ phone: searchQuery });
+            }
+          } else if (searchType === 'email') {
+            const emailExists = person.emails?.some(email => email.address === searchQuery);
+            if (!emailExists) {
+              if (!person.emails) {
+                person.emails = [];
+              }
+              person.emails.push({ address: searchQuery });
+            }
+          }
+        });
+      }
+ 
+
       if (stateService.newSearchPerformed && page === 1) {
           const resultType = results.count === 0 ? 'empty' : results.count === 1 ? 'single' : 'set';
           const keyword = typeof searchQuery === 'object' ? searchQuery.properties?.full_address || JSON.stringify(searchQuery) : searchQuery;
