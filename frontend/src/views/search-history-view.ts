@@ -127,6 +127,56 @@ export class SearchHistoryView extends LitElement {
       color: #9ca3af;
       text-transform: capitalize;
     }
+
+    /* --- ESTILOS RESPONSIVOS --- */
+    @media (max-width: 800px) {
+      .table-container {
+        border: none;
+        background-color: transparent;
+      }
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead {
+        display: none;
+      }
+      tr {
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        border: 1px solid #444;
+        background-color: #2a2a2a;
+        overflow: hidden;
+      }
+      td {
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+        border-bottom: 1px solid #333;
+      }
+      td:last-child {
+        border-bottom: none;
+      }
+      td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 1.5rem;
+        width: calc(50% - 2rem);
+        padding-right: 10px;
+        white-space: nowrap;
+        text-align: left;
+        font-weight: bold;
+        color: #ebb85e;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+      }
+      .action-button {
+        padding: 0.4rem 0.8rem;
+      }
+      .pagination {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+    }
   `;
 
   connectedCallback() {
@@ -210,30 +260,36 @@ export class SearchHistoryView extends LitElement {
               </tr>
             </thead>
             <tbody>
-              ${this.history.map(item => html`
-                <tr>
-                  <td>${new Date(item.date).toLocaleDateString()}</td>
-                  <td>${item.keyword}</td>
-                  <td>${this.renderType(item.type)}</td>
-                  <td>${item.count}</td>
-                  <td>${item.response?.documents?.length || 0}</td>
-                  <td>
-                    ${item.sort ? html`
-                      <div class="sort-info">
-                        ${Object.keys(item.sort)[0].replace('_', ' ')}
-                        (${item.sort[Object.keys(item.sort)[0]]})
-                      </div>
-                    ` : 'N/A'}
-                  </td>
-                  <td>
-                    ${item.resultType !== 'empty' ? html`
-                      <button class="action-button" @click=${() => this.handleViewReport(item)}>
-                        View Report
-                      </button>
-                    ` : nothing}
-                  </td>
-                </tr>
-              `)}
+              ${this.history.length === 0
+                ? html`
+                    <tr>
+                      <td colspan="7" class="error">No results found</td>
+                    </tr>
+                  `
+                : this.history.map(item => html`
+                    <tr>
+                      <td data-label="Date">${new Date(item.date).toLocaleDateString()}</td>
+                      <td data-label="Keyword">${item.keyword}</td>
+                      <td data-label="Type">${this.renderType(item.type)}</td>
+                      <td data-label="Total Results">${item.count}</td>
+                      <td data-label="Shown Results">${item.response?.documents?.length || 0}</td>
+                      <td data-label="Sort">
+                        ${item.sort ? html`
+                          <div class="sort-info">
+                            ${Object.keys(item.sort)[0].replace('_', ' ')}
+                            (${item.sort[Object.keys(item.sort)[0]]})
+                          </div>
+                        ` : 'N/A'}
+                      </td>
+                      <td data-label="Action">
+                        ${item.resultType !== 'empty' ? html`
+                          <button class="action-button" @click=${() => this.handleViewReport(item)}>
+                            View Report
+                          </button>
+                        ` : nothing}
+                      </td>
+                    </tr>
+                  `)}
             </tbody>
           </table>
           ${this.totalPages > 1 ? html`
