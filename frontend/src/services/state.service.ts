@@ -1,4 +1,4 @@
-import { Person } from '../interfaces/person.interface.ts';
+import { Person } from '../interfaces/person.interface';
 
 const STORAGE_KEY = 'app_state';
 const STATE_TTL = 24 * 60 * 60 * 1000; // 24 horas
@@ -10,6 +10,7 @@ class StateService {
   private _searchQuery: string | any = null;
   private _searchType: string | null = null; 
   public newSearchPerformed = false;
+  private _searchFilters: any = null;
 
   private _totalResults = 0;
   private _currentPage = 1;
@@ -28,6 +29,7 @@ class StateService {
       searchQuery: this._searchQuery,
       searchType: this._searchType,
       newSearchPerformed: this.newSearchPerformed,
+      searchFilters: this._searchFilters,
       totalResults: this._totalResults,
       currentPage: this._currentPage,
       limit: this._limit,
@@ -53,6 +55,7 @@ class StateService {
     this._searchQuery = savedState.searchQuery || null;
     this._searchType = savedState.searchType || null;
     this.newSearchPerformed = savedState.newSearchPerformed || false;
+    this._searchFilters = savedState.searchFilters || null;
     this._totalResults = savedState.totalResults || 0;
     this._currentPage = savedState.currentPage || 1;
     this._limit = savedState.limit || 5;
@@ -74,6 +77,9 @@ class StateService {
 
   get searchType(): string | null { return this._searchType; }
   set searchType(value: string | null) { this._searchType = value; this.saveStateToStorage(); this.notify(); }
+
+  get searchFilters(): any { return this._searchFilters; }
+  set searchFilters(value: any) { this._searchFilters = value; this.saveStateToStorage(); this.notify(); }
 
   get totalResults(): number { return this._totalResults; }
   set totalResults(value: number) { this._totalResults = value; this.saveStateToStorage(); this.notify(); }
@@ -100,6 +106,7 @@ class StateService {
     this._currentPage = 1;
     this._limit = 5;
     this._sort = { first_name: 'asc' };
+    this._searchFilters = null;
     localStorage.removeItem(STORAGE_KEY);
     this.notify();
   }

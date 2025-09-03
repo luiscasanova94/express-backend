@@ -198,4 +198,4 @@ export const personApiFields: PersonApiField[] = [
   }
 ];
 
-export const personApiLimit: number = 10;
+export const personApiLimit: number = 1;

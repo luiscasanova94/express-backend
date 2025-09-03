@@ -17,38 +17,70 @@ export class ResultsView extends LitElement {
 
   static styles = css`
     .results-container {
-      max-width: 800px;
-      margin: 2rem auto;
-      padding: 1rem;
+      margin: 0;
+      padding: 0;
+    }
+    .results-header {
+      background-color: #2d2d2d;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
     }
     .results-title {
       color: white;
-      text-align: center;
-      margin-bottom: 1.5rem;
-      font-size: 1.75rem;
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .results-count {
+      color: #ebb85e;
       font-weight: bold;
     }
+    .controls-container {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-top: 1rem;
+      gap: 1.5rem;
+    }
+    .control-group label {
+      color: #d1d5db;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-right: 0.5rem;
+    }
+    .control-select {
+      background-color: #3d3d3d;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 0.5rem;
+      cursor: pointer;
+    }
     .result-item {
-      background-color: #ebb85e;
+      background-color: #2d2d2d;
+      border: 1px solid #444;
       border-radius: 8px;
       padding: 1.5rem;
       margin-bottom: 1rem;
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     .person-info {
-        flex-grow: 1;
+      flex-grow: 1;
     }
     .person-name {
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: bold;
-      color: #333;
+      color: #ebb85e;
     }
     .person-details {
       font-size: 0.9rem;
-      color: #555;
+      color: #d1d5db;
       margin-top: 0.25rem;
     }
     .report-button {
@@ -56,9 +88,10 @@ export class ResultsView extends LitElement {
       color: white;
       padding: 10px 20px;
       border: none;
-      border-radius: 50px;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
       transition: background-color 0.3s;
       flex-shrink: 0;
       margin-left: 1rem;
@@ -73,7 +106,7 @@ export class ResultsView extends LitElement {
       background-color: #2d2d2d;
       border: 1px solid #444;
       border-radius: 8px;
-      padding: 1.5rem;
+      padding: 2.5rem;
     }
     .spinner-container {
       display: flex;
@@ -93,57 +126,28 @@ export class ResultsView extends LitElement {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    .controls-container {
+    .pagination-container {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-      margin-bottom: 1.5rem;
+      margin-top: 2rem;
     }
-    .control-group {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .control-group label {
-      color: #ffffff;
-      font-size: 0.9rem;
-      font-weight: 500;
-    }
-    .control-select {
+    .pagination-button {
       background-color: #3d3d3d;
       color: white;
       border: 1px solid #555;
+      padding: 0.6rem 1rem;
       border-radius: 6px;
-      padding: 0.5rem;
       cursor: pointer;
+      margin: 0 0.25rem;
     }
-    .pagination-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 2rem;
-    }
-    .pagination-button {
-        background-color: #3d3d3d;
-        color: white;
-        border: 1px solid #555;
-        padding: 0.6rem 1rem;
-        border-radius: 6px;
-        cursor: pointer;
-        margin: 0 0.25rem;
-        transition: background-color 0.2s;
-    }
-    .pagination-button:hover:not(:disabled) {
-        background-color: #eb4538;
-    }
-    .pagination-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-    .page-info {
-        color: #ccc;
-        margin: 0 1rem;
-        font-size: 0.9rem;
+    .pagination-button:hover:not(:disabled) { background-color: #eb4538; }
+    .pagination-button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .page-info { color: #ccc; margin: 0 1rem; font-size: 0.9rem; }
+
+    @media (max-width: 500px) {
+      .result-item { flex-direction: column; align-items: flex-start; gap: 1rem; }
+      .report-button { width: 100%; margin-left: 0; }
     }
   `;
 
@@ -171,12 +175,7 @@ export class ResultsView extends LitElement {
   }
 
   private _dispatchOptionsChange(detail: any) {
-    const event = new CustomEvent('options-changed', {
-      detail,
-      bubbles: true,
-      composed: true
-    });
-    this.dispatchEvent(event);
+    this.dispatchEvent(new CustomEvent('options-changed', { detail, bubbles: true, composed: true }));
   }
 
   get totalPages() {
@@ -197,39 +196,37 @@ export class ResultsView extends LitElement {
 
     return html`
       <div class="results-container">
-        ${this.isNewSearch ? html`
-          <h1 class="results-title pt-10" id="results-title">Search Results for "${displayQuery}"</h1>
-        ` : ''}
-
-        ${!this.isLoading && this.totalResults > 0 && this.isNewSearch ? html`
-          <div class="controls-container">
-            <div class="control-group">
-              <label for="sort-by">Sort by:</label>
-              <select id="sort-by" class="control-select" @change=${this._onSortChange} .value=${this._getSortValue()}>
-                <option value="first_name-asc">Name (A-Z)</option>
-                <option value="first_name-desc">Name (Z-A)</option>
-                <option value="age-asc">Age (Youngest First)</option>
-                <option value="age-desc">Age (Oldest First)</option>
-              </select>
+        
+        <div class="results-header">
+            <h1 class="results-title">
+                <span class="results-count">(${this.totalResults})</span> Records found for ${displayQuery}
+            </h1>
+            ${!this.isLoading && this.totalResults > 0 ? html`
+            <div class="controls-container">
+                <div class="control-group">
+                <label for="sort-by">Sort by:</label>
+                <select id="sort-by" class="control-select" @change=${this._onSortChange} .value=${this._getSortValue()}>
+                    <option value="first_name-asc">Name (A-Z)</option>
+                    <option value="first_name-desc">Name (Z-A)</option>
+                    <option value="age-asc">Age (Youngest First)</option>
+                    <option value="age-desc">Age (Oldest First)</option>
+                </select>
+                </div>
+                <div class="control-group">
+                <label for="limit">Show:</label>
+                <select id="limit" class="control-select" @change=${this._onLimitChange} .value=${String(this.limit)}>
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+                </div>
             </div>
-            <div class="control-group">
-              <label for="limit">Show:</label>
-              <select id="limit" class="control-select" @change=${this._onLimitChange} .value=${String(this.limit)}>
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-              </select>
-            </div>
-          </div>
-        ` : ''}
+            ` : ''}
+        </div>
 
         ${this.isLoading
-          ? html`
-              <div class="spinner-container">
-                <div class="spinner"></div>
-              </div>
-            `
+          ? html`<div class="spinner-container"><div class="spinner"></div></div>`
           : this.persons.length === 0
             ? html`<p class="no-results">No results found.</p>`
             : html`
@@ -243,13 +240,13 @@ export class ResultsView extends LitElement {
                           ${person.state ? html`<span>, ${person.state}</span>` : ''}
                         </div>
                       </div>
-                      <button class="report-button font-semibold" @click=${() => this._handleSeeReport(person.id)}>
+                      <button class="report-button" @click=${() => this._handleSeeReport(person.id)}>
                         See Report
                       </button>
                     </div>
                 `)}
 
-                ${this.totalPages > 1 && this.isNewSearch ? html`
+                ${this.totalPages > 1 ? html`
                     <div class="pagination-container">
                         <button class="pagination-button" ?disabled=${this.currentPage === 1} @click=${() => this._onPageChange(this.currentPage - 1)}>
                             &laquo; Previous

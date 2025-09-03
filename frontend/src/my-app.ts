@@ -14,11 +14,16 @@ import './views/login-view';
 import './components/loading-overlay';
 import './components/modal-element';
 import './views/search-history-view'; 
+import './views/search-results-view';
 
 @customElement('my-app')
 class MyApp extends LitElement {
   @state() private isSidebarOpen = false;
   @state() private isAuthenticated = false; 
+  @state() private _currentPath = window.location.pathname;
+
+  // Lista de rutas que no deben mostrar el sidebar principal
+  private _fullWidthPaths = ['/login', '/results'];
 
   static styles = css`
     :host {
@@ -51,6 +56,7 @@ class MyApp extends LitElement {
     
     main.full-width {
         width: 100%;
+        padding: 0; /* Opcional: remover padding en vistas de ancho completo */
     }
 
     .sidebar-overlay {
@@ -73,6 +79,9 @@ class MyApp extends LitElement {
         top: 0;
         z-index: 1000;
       }
+      main {
+        padding: 8px; /* Ajustar padding para móviles */
+      }
       
       .sidebar-overlay.open {
         display: block;
@@ -90,18 +99,21 @@ class MyApp extends LitElement {
   
   async connectedCallback() {
     super.connectedCallback();
-    window.addEventListener('vaadin-router-location-changed', this.handleAuthChange);
-    await this.handleAuthChange(); 
+    window.addEventListener('vaadin-router-location-changed', this.handleLocationChanged);
+    await this.handleLocationChanged(); 
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.removeEventListener('toggle-sidebar', this.toggleSidebar);
-    window.removeEventListener('vaadin-router-location-changed', this.handleAuthChange);
+    window.removeEventListener('vaadin-router-location-changed', this.handleLocationChanged);
   }
   
-  private handleAuthChange = async () => {
+  private handleLocationChanged = async (e?: CustomEvent) => {
     this.isAuthenticated = await authService.isAuthenticated();
+    if (e) {
+      this._currentPath = e.detail.location.pathname;
+    }
   }
 
   firstUpdated() {
@@ -112,6 +124,11 @@ class MyApp extends LitElement {
         {
           path: '/',
           component: 'home-view',
+          action: authGuard,
+        },
+        {
+          path: '/results',
+          component: 'search-results-view',
           action: authGuard,
         },
         { path: '/login', component: 'login-view' },
@@ -135,15 +152,17 @@ class MyApp extends LitElement {
   }
 
   render() {
+    const showMainSidebar = this.isAuthenticated && !this._fullWidthPaths.some(p => this._currentPath.startsWith(p));
+
     return html`
       <app-header></app-header>
       
       <div class="content-wrapper">
-        ${this.isAuthenticated ? html`<app-sidebar .open=${this.isSidebarOpen}></app-sidebar>` : ''}
+        ${showMainSidebar ? html`<app-sidebar .open=${this.isSidebarOpen}></app-sidebar>` : ''}
         
         <div class="sidebar-overlay ${this.isSidebarOpen ? 'open' : ''}" @click=${this.toggleSidebar}></div>
         
-        <main id="outlet" class="${!this.isAuthenticated ? 'full-width' : ''}"></main>
+        <main id="outlet" class="${!showMainSidebar ? 'full-width' : ''}"></main>
       </div>
 
       <app-footer></app-footer>

@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { PersonService } from '../services/person.service';
 import { stateService } from '../services/state.service';
 import { searchHistoryService, SearchHistoryEntry } from '../services/search-history.service';
+import { Router } from '@vaadin/router';
 import '../components/search-form';
 import '../components/loading-overlay';
 import '../components/modal-element';
@@ -73,6 +74,8 @@ export class HomeView extends LitElement {
     stateService.currentPage = 1;
     stateService.limit = 5;
     stateService.sort = item.sort || { first_name: 'asc' };
+
+    Router.go('/results');
   }
   
   private async executeSearch(page = 1) {
@@ -99,7 +102,6 @@ export class HomeView extends LitElement {
           break;
       }
 
-     
       if (results.documents) {
         results.documents.forEach((person: Person) => {
           if (searchType === 'phone') {
@@ -122,7 +124,6 @@ export class HomeView extends LitElement {
         });
       }
  
-
       if (stateService.newSearchPerformed && page === 1) {
           const resultType = results.count === 0 ? 'empty' : results.count === 1 ? 'single' : 'set';
           const keyword = typeof searchQuery === 'object' ? searchQuery.properties?.full_address || JSON.stringify(searchQuery) : searchQuery;
@@ -167,16 +168,11 @@ export class HomeView extends LitElement {
     stateService.limit = 5;
     stateService.sort = { first_name: 'asc' };
     
-    await this.updateComplete;
     await this.executeSearch(1);
-  }
-
-  private async _handleOptionsChange(e: CustomEvent) {
-    const { page, limit, sort } = e.detail;
-    if (limit !== undefined) stateService.limit = limit;
-    if (sort !== undefined) stateService.sort = sort;
     
-    await this.executeSearch(page || stateService.currentPage);
+    if (!stateService.error) {
+        Router.go('/results');
+    }
   }
 
   render() {
@@ -193,21 +189,7 @@ export class HomeView extends LitElement {
           ></recent-searches>
         ` : ''}
       </div>
-
-      ${stateService.searchQuery ? html`
-        <results-view 
-          .persons=${stateService.persons} 
-          .searchQuery=${stateService.searchQuery}
-          ?isLoading=${stateService.loading}
-          .totalResults=${stateService.totalResults}
-          .currentPage=${stateService.currentPage}
-          .limit=${stateService.limit}
-          .sort=${stateService.sort}
-          ?isNewSearch=${stateService.newSearchPerformed}
-          @options-changed=${this._handleOptionsChange}
-        ></results-view>
-      ` : ''}
-
+      
       <modal-element 
         ?active=${!!stateService.error} 
         .message=${stateService.error || ''}
