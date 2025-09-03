@@ -14,6 +14,7 @@ export interface SearchHistoryEntry {
   offset: number;
   page: number;
   count: number;
+  filters?: any;
 }
 
 export interface PaginatedHistoryResponse {

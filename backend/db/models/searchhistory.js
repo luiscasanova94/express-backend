@@ -23,7 +23,8 @@ module.exports = (sequelize, DataTypes) => {
     offset: DataTypes.INTEGER,
     page: DataTypes.INTEGER,
     count: DataTypes.INTEGER,
-    credits_used: DataTypes.INTEGER
+    credits_used: DataTypes.INTEGER,
+    filters: DataTypes.JSON
   }, {
     sequelize,
     modelName: 'SearchHistory',

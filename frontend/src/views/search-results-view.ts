@@ -3,6 +3,8 @@ import { customElement, state } from 'lit/decorators.js';
 import { stateService } from '../services/state.service';
 import { PersonService } from '../services/person.service';
 import mainStyles from '../styles/main.css?inline';
+import { searchHistoryService } from '../services/search-history.service';
+import { Person } from '../interfaces/person.interface';
 
 import '../components/filter-sidebar';
 import './results-view';
@@ -45,20 +47,85 @@ export class SearchResultsView extends LitElement {
   }
 
   private prepareInitialFilters() {
-    const { searchQuery, searchType } = stateService;
+    const { searchQuery, searchType, searchFilters } = stateService;
     const filters: any = {};
+
     if (searchType === 'name' && typeof searchQuery === 'string') {
         const nameParts = searchQuery.split(' ');
         filters.firstName = nameParts[0] || '';
         filters.lastName = nameParts.slice(1).join(' ') || '';
     }
+    
+    if(searchFilters?.propositions) {
+        searchFilters.propositions.forEach((p: any) => {
+            if(p.attribute === 'state') filters.state = p.value[0];
+            if(p.attribute === 'city') filters.city = p.value;
+            if(p.attribute === 'age' && Array.isArray(p.value)) {
+                filters.ageMin = p.value[0];
+                filters.ageMax = p.value[1];
+            }
+        });
+    }
+
     this.initialFilters = filters;
+  }
+  
+  private async executeSearch(page: number, saveToHistory: boolean) {
+    stateService.loading = true;
+    const offset = (page - 1) * stateService.limit;
+
+    try {
+      let results: any;
+      const { searchType, searchQuery, searchFilters, limit, sort } = stateService;
+
+      switch (searchType) {
+        case 'phone':
+          results = await this.personService.findByPhone(searchQuery, limit, offset, sort);
+          break;
+        case 'address':
+          results = await this.personService.findByAddress(searchQuery, limit, offset, sort);
+          break;
+        case 'name':
+          results = await this.personService.findByName(searchQuery, searchFilters, limit, offset, sort);
+          break;
+        case 'email':
+          results = await this.personService.findByEmail(searchQuery, limit, offset, sort);
+          break;
+        default:
+          throw new Error('Invalid search type');
+      }
+
+      if (saveToHistory) {
+        const resultType = results.count === 0 ? 'empty' : 'set';
+        const keyword = typeof searchQuery === 'object' ? searchQuery.properties?.full_address || JSON.stringify(searchQuery) : searchQuery;
+        const historyData = {
+          date: new Date().toISOString(),
+          keyword: keyword,
+          type: searchType,
+          resultType: resultType,
+          response: results,
+          state: 'active',
+          sort: stateService.sort,
+          offset: offset,
+          page: page,
+          count: results.count,
+          filters: searchFilters
+        };
+        await searchHistoryService.saveSearch(historyData);
+      }
+
+      stateService.persons = results.documents.map((p: Person, i: number) => ({...p, id: `person_${Date.now()}_${i}`}));
+      stateService.totalResults = results.count;
+      stateService.currentPage = page;
+
+    } catch (error: any) {
+      stateService.error = error.message || 'Search failed.';
+    } finally {
+      stateService.loading = false;
+    }
   }
 
   private async _handleFiltersApplied(e: CustomEvent) {
-    stateService.loading = true;
-    stateService.error = null;
-    
     const filters = e.detail;
     const propositions = [];
 
@@ -86,18 +153,10 @@ export class SearchResultsView extends LitElement {
     
     stateService.searchType = 'name';
     stateService.searchQuery = `${filters.firstName} ${filters.lastName}`.trim();
-    (stateService as any).searchFilters = apiFilters;
+    stateService.searchFilters = apiFilters;
     stateService.currentPage = 1;
 
-    try {
-        const results = await this.personService.findByName(stateService.searchQuery, apiFilters, stateService.limit, 0, stateService.sort);
-        stateService.persons = results.documents.map((p: any, i: number) => ({...p, id: `person_${Date.now()}_${i}`}));
-        stateService.totalResults = results.count;
-    } catch (error: any) {
-        stateService.error = error.message || 'Refined search failed.';
-    } finally {
-        stateService.loading = false;
-    }
+    await this.executeSearch(1, true);
   }
 
   private async _handleOptionsChange(e: CustomEvent) {
@@ -105,25 +164,14 @@ export class SearchResultsView extends LitElement {
     if (limit !== undefined) stateService.limit = limit;
     if (sort !== undefined) stateService.sort = sort;
     
-    stateService.loading = true;
-    const offset = ((page || stateService.currentPage) - 1) * stateService.limit;
-
-    try {
-        const results = await this.personService.findByName(stateService.searchQuery, (stateService as any).searchFilters, stateService.limit, offset, stateService.sort);
-        stateService.persons = results.documents.map((p: any, i: number) => ({...p, id: `person_${Date.now()}_${i}`}));
-        stateService.totalResults = results.count;
-        stateService.currentPage = page || stateService.currentPage;
-    } catch (error: any) {
-        stateService.error = error.message || 'Pagination failed.';
-    } finally {
-        stateService.loading = false;
-    }
+    const newPage = page || stateService.currentPage;
+    await this.executeSearch(newPage, true);
   }
 
   render() {
     return html`
       <div class="container mx-auto px-4">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8 mb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8 mb-8">
           <div class="lg:col-span-1">
             <div class="sticky top-8">
               <filter-sidebar 
@@ -132,7 +180,7 @@ export class SearchResultsView extends LitElement {
               </filter-sidebar>
             </div>
           </div>
-          <div class="lg:col-span-2">
+          <div class="lg:col-span-3">
             <results-view
               .persons=${stateService.persons} 
               .searchQuery=${stateService.searchQuery}

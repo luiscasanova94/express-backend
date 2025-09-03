@@ -201,22 +201,25 @@ export class SearchHistoryView extends LitElement {
    handleViewReport(item: SearchHistoryEntry) {
     if (item.resultType === 'empty') return;
 
-    stateService.persons = item.response.documents.map((p: any, i: number) => ({
+    const persons = item.response.documents.map((p: any, i: number) => ({
       ...p,
       id: `person_${Date.now()}_${i}`
     }));
+
+    stateService.persons = persons;
     stateService.searchQuery = item.keyword;
     stateService.searchType = item.type;
     stateService.totalResults = item.count;
-    stateService.currentPage = 1;
+    stateService.currentPage = item.page || 1;
     stateService.sort = item.sort || { first_name: 'asc' };
+    stateService.searchFilters = item.filters || null;
     
     stateService.newSearchPerformed = false; 
 
-    if (item.resultType === 'set') {
-      Router.go('/');
-    } else if (stateService.persons[0]) {
-      Router.go(`/report/${stateService.persons[0].id}`);
+    if (item.resultType === 'single' && persons.length > 0) {
+      Router.go(`/report/${persons[0].id}`);
+    } else {
+      Router.go('/results');
     }
   }
   

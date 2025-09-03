@@ -3,7 +3,7 @@ const { Op } = require('sequelize');
 
 exports.createSearchHistory = async (req, res) => {
   try {
-    const { date, keyword, type, resultType, state, response, sort, offset, page, count } = req.body;
+    const { date, keyword, type, resultType, state, response, sort, offset, page, count, filters } = req.body;
     const credits_used = response.documents ? response.documents.length : 0;
     const newSearch = await SearchHistory.create({
       userId: req.user.id,
@@ -17,7 +17,8 @@ exports.createSearchHistory = async (req, res) => {
       offset,
       page,
       count,
-      credits_used
+      credits_used,
+      filters
     });
     res.status(201).json(newSearch);
   } catch (error) {
@@ -119,8 +120,8 @@ exports.getStatistics = async (req, res) => {
         res.status(200).json({
             totalQueries,
             totalCreditsUsed,
-            startDate: startDate || firstEntry.date,
-            endDate: endDate || lastEntry.date
+            startDate: startDate || (firstEntry ? firstEntry.date : new Date()),
+            endDate: endDate || (lastEntry ? lastEntry.date : new Date())
         });
     } catch (error) {
         res.status(500).json({ error: 'Error fetching statistics' });
