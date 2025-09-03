@@ -1,8 +1,10 @@
 const { SearchHistory } = require('../db/models');
+const { Op } = require('sequelize');
 
 exports.createSearchHistory = async (req, res) => {
   try {
     const { date, keyword, type, resultType, state, response, sort, offset, page, count } = req.body;
+    const credits_used = response.documents ? response.documents.length : 0;
     const newSearch = await SearchHistory.create({
       userId: req.user.id,
       date,
@@ -14,7 +16,8 @@ exports.createSearchHistory = async (req, res) => {
       sort,
       offset,
       page,
-      count
+      count,
+      credits_used
     });
     res.status(201).json(newSearch);
   } catch (error) {
@@ -93,4 +96,33 @@ exports.deleteSearchHistory = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Error deleting search history' });
   }
+};
+
+exports.getStatistics = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        let where = {};
+        if (startDate && endDate) {
+            where.date = {
+                [Op.between]: [new Date(startDate), new Date(endDate)]
+            };
+        }
+
+        const stats = await SearchHistory.findAll({ where });
+
+        const totalQueries = stats.length;
+        const totalCreditsUsed = stats.reduce((acc, curr) => acc + (curr.credits_used || 0), 0);
+        
+        const firstEntry = await SearchHistory.findOne({ order: [['date', 'ASC']] });
+        const lastEntry = await SearchHistory.findOne({ order: [['date', 'DESC']] });
+        
+        res.status(200).json({
+            totalQueries,
+            totalCreditsUsed,
+            startDate: startDate || firstEntry.date,
+            endDate: endDate || lastEntry.date
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Error fetching statistics' });
+    }
 };

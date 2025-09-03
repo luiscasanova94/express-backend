@@ -15,6 +15,7 @@ import './components/loading-overlay';
 import './components/modal-element';
 import './views/search-history-view'; 
 import './views/search-results-view';
+import './views/statistics-view';
 
 @customElement('my-app')
 class MyApp extends LitElement {
@@ -141,6 +142,11 @@ class MyApp extends LitElement {
         {
           path: '/search-history',
           component: 'search-history-view',
+          action: authGuard,
+        },
+        {
+          path: '/statistics',
+          component: 'statistics-view',
           action: authGuard,
         },
       ]);

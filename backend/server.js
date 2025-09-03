@@ -24,6 +24,7 @@ app.get('/history', authenticateToken, searchHistoryController.getAllSearchHisto
 app.get('/history/:id', authenticateToken, searchHistoryController.getSearchHistoryById);
 app.put('/history/:id', authenticateToken, searchHistoryController.updateSearchHistory);
 app.delete('/history/:id', authenticateToken, searchHistoryController.deleteSearchHistory);
+app.get('/statistics', authenticateToken, searchHistoryController.getStatistics);
 
 
 app.listen(PORT, () => {
