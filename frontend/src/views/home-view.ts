@@ -7,6 +7,7 @@ import { Router } from '@vaadin/router';
 import '../components/search-form';
 import '../components/loading-overlay';
 import '../components/modal-element';
+import '../components/searching-modal';
 import './results-view';
 import '../components/recent-searches';
 import { Person } from '../interfaces/person.interface.js';
@@ -37,9 +38,8 @@ export class HomeView extends LitElement {
         this._isSubscribed = true;
     }
     
-    if (!stateService.newSearchPerformed) {
-      await this.fetchRecentHistory();
-    }
+    // Se eliminó la condición para que siempre cargue el historial
+    await this.fetchRecentHistory();
   }
 
   disconnectedCallback() {
@@ -182,12 +182,10 @@ export class HomeView extends LitElement {
             <search-form @search-submitted=${this._handleSearch}></search-form>
         </div>
 
-        ${!stateService.newSearchPerformed && this.recentHistory.length > 0 ? html`
-          <recent-searches 
-            .history=${this.recentHistory}
-            @rerun-search=${this._handleRerunSearch}
-          ></recent-searches>
-        ` : ''}
+        <recent-searches 
+          .history=${this.recentHistory}
+          @rerun-search=${this._handleRerunSearch}
+        ></recent-searches>
       </div>
       
       <modal-element 
@@ -195,6 +193,8 @@ export class HomeView extends LitElement {
         .message=${stateService.error || ''}
         @click=${() => stateService.error = null}
       ></modal-element>
+
+      <searching-modal ?active=${stateService.loading}></searching-modal>
     `;
   }
 
