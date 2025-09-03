@@ -129,7 +129,7 @@ export class HomeView extends LitElement {
         });
       }
  
-      if (stateService.newSearchPerformed && page === 1) {
+      if (stateService.newSearchPerformed) {
           const resultType = results.count === 0 ? 'empty' : results.count === 1 ? 'single' : 'set';
           const keyword = typeof searchQuery === 'object' ? searchQuery.properties?.full_address || JSON.stringify(searchQuery) : searchQuery;
           const historyData = {
@@ -169,15 +169,30 @@ export class HomeView extends LitElement {
     stateService.searchType = type;
     stateService.searchFilters = filters;
     stateService.persons = [];
-
+    stateService.totalResults = 0;
+    
     stateService.currentPage = 1;
     stateService.limit = 5;
     stateService.sort = { first_name: 'asc' };
     
     await this.executeSearch(1);
     
-    if (!stateService.error) {
+    if (stateService.error) {
+      return;
+    }
+
+    const { searchType, totalResults, persons } = stateService;
+
+    if (searchType === 'name' || searchType === 'address') {
+      Router.go('/results');
+    } else if (searchType === 'phone' || searchType === 'email') {
+      if (totalResults === 1 && persons[0]) {
+        Router.go(`/report/${persons[0].id}`);
+      } else if (totalResults > 1) {
         Router.go('/results');
+      } else {
+        stateService.error = `No results found for the ${searchType} you entered.`;
+      }
     }
   }
 
