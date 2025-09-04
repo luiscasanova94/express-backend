@@ -164,7 +164,6 @@ export class SearchForm extends LitElement {
       const feature = retrieve.features?.[0];
       this.addressInput = suggestion.full_address ?? suggestion.name;
       this.addressSuggestions = [];
-      console.log('Address selected JSON:', feature);
       this.addressObj = feature;
     } catch (err) {
       console.error('Mapbox retrieve error', err);
@@ -190,13 +189,33 @@ export class SearchForm extends LitElement {
       this.validationError = 'Please enter a value to search.';
       return;
     }
-    if (!this._validateInput(this.searchType, value)) return;
+    if (this.searchType !== 'address' && !this._validateInput(this.searchType, value)) return;
     
     if (this.searchType === 'name') {
       this.showNameFilterModal = true;
     } else {
+      let detail: any = { type: this.searchType, value };
+      
+      // Si la búsqueda es por dirección, extraemos y añadimos los filtros de estado y ciudad
+      if (this.searchType === 'address' && this.addressObj?.properties) {
+        const props = this.addressObj.properties;
+        const state = props.region_code;
+        const city = props.place;
+
+        if (state && city) {
+          detail.filters = {
+            type: 'connective',
+            operator: 'and',
+            propositions: [
+              { type: 'predicate', attribute: 'state', relation: 'in', value: [state] },
+              { type: 'predicate', attribute: 'city', relation: 'matches', value: city }
+            ]
+          };
+        }
+      }
+
       const event = new CustomEvent('search-submitted', {
-        detail: { type: this.searchType, value },
+        detail,
         bubbles: true,
         composed: true,
       });

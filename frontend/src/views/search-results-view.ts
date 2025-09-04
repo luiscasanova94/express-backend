@@ -59,6 +59,7 @@ export class SearchResultsView extends LitElement {
         filters.lastName = nameParts.slice(1).join(' ') || '';
     }
     
+    // Extrae filtros de estado/ciudad/edad si existen (para búsquedas de nombre o dirección)
     if(searchFilters?.propositions) {
         searchFilters.propositions.forEach((p: any) => {
             if(p.attribute === 'state') filters.state = p.value[0];
