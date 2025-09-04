@@ -5,9 +5,11 @@ import { PersonService } from '../services/person.service';
 import mainStyles from '../styles/main.css?inline';
 import { searchHistoryService } from '../services/search-history.service';
 import { Person } from '../interfaces/person.interface';
+import { breadcrumbService } from '../services/breadcrumb.service';
 
 import '../components/filter-sidebar';
 import './results-view';
+import '../components/breadcrumb-trail'; // Importado
 
 @customElement('search-results-view')
 export class SearchResultsView extends LitElement {
@@ -37,6 +39,7 @@ export class SearchResultsView extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
+    breadcrumbService.navigate('Results', '/results');
     stateService.subscribe(this._subscription);
     this.prepareInitialFilters();
   }
@@ -171,7 +174,8 @@ export class SearchResultsView extends LitElement {
   render() {
     return html`
       <div class="container mx-auto px-4">
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8 mb-8">
+        <breadcrumb-trail></breadcrumb-trail> 
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8 mb-8">
           <div class="lg:col-span-1">
             <div class="sticky top-8">
               <filter-sidebar 
@@ -180,7 +184,7 @@ export class SearchResultsView extends LitElement {
               </filter-sidebar>
             </div>
           </div>
-          <div class="lg:col-span-3">
+          <div class="lg:col-span-2">
             <results-view
               .persons=${stateService.persons} 
               .searchQuery=${stateService.searchQuery}

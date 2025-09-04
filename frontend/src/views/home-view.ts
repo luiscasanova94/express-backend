@@ -11,6 +11,7 @@ import '../components/searching-modal';
 import './results-view';
 import '../components/recent-searches';
 import { Person } from '../interfaces/person.interface.js';
+import { breadcrumbService } from '../services/breadcrumb.service';
 
 @customElement('home-view')
 export class HomeView extends LitElement {
@@ -33,6 +34,7 @@ export class HomeView extends LitElement {
 
   async connectedCallback() {
     super.connectedCallback();
+    breadcrumbService.reset();
     if (!this._isSubscribed) {
         stateService.subscribe(this._subscription);
         this._isSubscribed = true;
@@ -212,7 +214,6 @@ export class HomeView extends LitElement {
       <modal-element 
         ?active=${!!stateService.error} 
         .message=${stateService.error || ''}
-        @click=${() => stateService.error = null}
       ></modal-element>
 
       <searching-modal ?active=${stateService.loading}></searching-modal>

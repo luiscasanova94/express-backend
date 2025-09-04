@@ -7,6 +7,7 @@ import mainStyles from './styles/main.css?inline';
 import './components/app-header';
 import './components/app-footer';
 import './components/app-sidebar';
+// Se elimina la importación de breadcrumb-trail de aquí
 import './views/home-view';
 import './views/about-view';
 import './views/report-view';
@@ -23,8 +24,8 @@ class MyApp extends LitElement {
   @state() private isAuthenticated = false; 
   @state() private _currentPath = window.location.pathname;
 
-  // Lista de rutas que no deben mostrar el sidebar principal
-  private _fullWidthPaths = ['/login', '/results'];
+  // Rutas que no muestran el sidebar principal
+  private _fullWidthPaths = ['/login'];
 
   static styles = css`
     :host {
@@ -57,7 +58,7 @@ class MyApp extends LitElement {
     
     main.full-width {
         width: 100%;
-        padding: 0; /* Opcional: remover padding en vistas de ancho completo */
+        padding: 0;
     }
 
     .sidebar-overlay {
@@ -81,7 +82,7 @@ class MyApp extends LitElement {
         z-index: 1000;
       }
       main {
-        padding: 8px; /* Ajustar padding para móviles */
+        padding: 8px;
       }
       
       .sidebar-overlay.open {
@@ -112,9 +113,7 @@ class MyApp extends LitElement {
   
   private handleLocationChanged = async (e?: CustomEvent) => {
     this.isAuthenticated = await authService.isAuthenticated();
-    if (e) {
-      this._currentPath = e.detail.location.pathname;
-    }
+    this._currentPath = e ? e.detail.location.pathname : window.location.pathname;
   }
 
   firstUpdated() {
@@ -122,33 +121,13 @@ class MyApp extends LitElement {
     if (outlet) {
       const router = new Router(outlet);
       router.setRoutes([
-        {
-          path: '/',
-          component: 'home-view',
-          action: authGuard,
-        },
-        {
-          path: '/results',
-          component: 'search-results-view',
-          action: authGuard,
-        },
+        { path: '/', component: 'home-view', action: authGuard },
+        { path: '/results', component: 'search-results-view', action: authGuard },
         { path: '/login', component: 'login-view' },
         { path: '/about', component: 'about-view' },
-        {
-          path: '/report/:id',
-          component: 'report-view',
-          action: authGuard,
-        },
-        {
-          path: '/search-history',
-          component: 'search-history-view',
-          action: authGuard,
-        },
-        {
-          path: '/statistics',
-          component: 'statistics-view',
-          action: authGuard,
-        },
+        { path: '/report/:id', component: 'report-view', action: authGuard },
+        { path: '/search-history', component: 'search-history-view', action: authGuard },
+        { path: '/statistics', component: 'statistics-view', action: authGuard },
       ]);
     }
   }
@@ -159,7 +138,7 @@ class MyApp extends LitElement {
 
   render() {
     const showMainSidebar = this.isAuthenticated && !this._fullWidthPaths.some(p => this._currentPath.startsWith(p));
-
+    
     return html`
       <app-header></app-header>
       

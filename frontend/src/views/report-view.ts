@@ -9,6 +9,8 @@ import mapboxgl from 'mapbox-gl';
 import mapboxCss from 'mapbox-gl/dist/mapbox-gl.css?inline';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { ethnicityMap, ethnicGroupMap, languageMap, primaryLanguageMap, religiousAffiliationMap, countryAlpha2Map } from '../data/culture-catalogs.data';
+import { breadcrumbService } from '../services/breadcrumb.service';
+import '../components/breadcrumb-trail'; // Importado
 
 
 const creditCardTypeMap: { [key: string]: { name: string; icon: string } } = {
@@ -335,6 +337,7 @@ export class ReportView extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
+    breadcrumbService.navigate('Report', this.location.pathname);
     window.scrollTo(0, 0);
     const personId = this.location.params.id as string;
     if (personId) {
@@ -543,6 +546,7 @@ export class ReportView extends LitElement {
   private _renderContentSections() {
     return html`
       <div id="main-content-scroll-area" class="main-content">
+        <breadcrumb-trail class="mb-4"></breadcrumb-trail>
         ${reportSections.map(section => {
           const renderMethod = (this as any)[`_render${this._capitalize(section.id.replace(/_/g, ''))}Section`];
           const content = typeof renderMethod === 'function'

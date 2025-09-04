@@ -1,6 +1,8 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { statisticsService, StatisticsResponse } from '../services/statistics.service';
+import { breadcrumbService } from '../services/breadcrumb.service';
+import '../components/breadcrumb-trail'; // Importado
 
 @customElement('statistics-view')
 export class StatisticsView extends LitElement {
@@ -77,6 +79,7 @@ export class StatisticsView extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
+    breadcrumbService.navigate('Statistics', '/statistics');
     this.fetchStatistics();
   }
 
@@ -101,6 +104,7 @@ export class StatisticsView extends LitElement {
 
     return html`
       <div class="container">
+        <breadcrumb-trail></breadcrumb-trail>
         <h1 class="title">Statistics</h1>
         <div class="date-range-picker">
           <input type="date" .value=${this.startDate} @input=${(e: any) => this.startDate = e.target.value}>

@@ -3,6 +3,8 @@ import { customElement, state } from 'lit/decorators.js';
 import { searchHistoryService, SearchHistoryEntry } from '../services/search-history.service';
 import { stateService } from '../services/state.service';
 import { Router } from '@vaadin/router';
+import { breadcrumbService } from '../services/breadcrumb.service';
+import '../components/breadcrumb-trail'; // Importado
 
 @customElement('search-history-view')
 export class SearchHistoryView extends LitElement {
@@ -128,7 +130,6 @@ export class SearchHistoryView extends LitElement {
       text-transform: capitalize;
     }
 
-    /* --- ESTILOS RESPONSIVOS --- */
     @media (max-width: 800px) {
       .table-container {
         border: none;
@@ -181,6 +182,7 @@ export class SearchHistoryView extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
+    breadcrumbService.navigate('Search History', '/search-history');
     this.fetchHistory(this.currentPage);
   }
 
@@ -248,6 +250,7 @@ export class SearchHistoryView extends LitElement {
 
     return html`
       <div class="container">
+        <breadcrumb-trail></breadcrumb-trail>
         <h1 class="title">Search History</h1>
         <div class="table-container">
           <table>
