@@ -6,13 +6,14 @@ import { stateService } from '../services/state.service';
 import { Router } from '@vaadin/router';
 import { breadcrumbService } from '../services/breadcrumb.service';
 import mainStyles from '../styles/main.css?inline';
+import '../components/breadcrumb-trail';
 
 @customElement('tracked-results-view')
 export class TrackedResultsView extends LitElement {
   @state() private trackedPeople: Person[] = [];
   @state() private isLoading = true;
   @state() private error = '';
-  @state() private updatingTrackingId: string | null = null; // Para deshabilitar el switch mientras se actualiza
+  @state() private updatingTrackingId: string | null = null;
 
   static styles = css`
     :host {
@@ -28,6 +29,8 @@ export class TrackedResultsView extends LitElement {
       font-size: 2rem;
       font-weight: bold;
       margin-bottom: 2rem;
+      border-bottom: 2px solid #444; /* Añadido */
+      padding-bottom: 1rem; /* Añadido */
     }
     .grid {
       display: grid;
@@ -39,21 +42,23 @@ export class TrackedResultsView extends LitElement {
       border: 1px solid #444;
       border-radius: 8px;
       padding: 1.5rem;
-      position: relative; /* Necesario para posicionar el switch */
+      position: relative;
       display: flex;
       flex-direction: column;
+      transition: box-shadow 0.2s;
     }
     .person-card:hover {
       box-shadow: 0 10px 20px rgba(0,0,0,0.2);
     }
     .card-content {
-        cursor: pointer; /* Solo el contenido es clickeable para el reporte */
+        cursor: pointer;
         flex-grow: 1;
         display: flex;
         flex-direction: column;
+        transition: transform 0.2s;
     }
     .card-content:hover {
-        transform: translateY(-5px);
+        transform: translateY(-2px);
     }
     .person-name {
       font-size: 1.25rem;
@@ -77,8 +82,6 @@ export class TrackedResultsView extends LitElement {
       padding: 4rem;
       font-size: 1.2rem;
     }
-
-    /* Estilos para el switch de Tracking */
     .tracking-switch-container {
       position: absolute;
       top: 1rem;
@@ -96,8 +99,8 @@ export class TrackedResultsView extends LitElement {
     .switch {
       position: relative;
       display: inline-block;
-      width: 38px; /* Más pequeño para la tarjeta */
-      height: 20px; /* Más pequeño para la tarjeta */
+      width: 38px;
+      height: 20px;
     }
     .switch input { 
       opacity: 0;
@@ -118,8 +121,8 @@ export class TrackedResultsView extends LitElement {
     .slider:before {
       position: absolute;
       content: "";
-      height: 14px; /* Más pequeño */
-      width: 14px; /* Más pequeño */
+      height: 14px;
+      width: 14px;
       left: 3px;
       bottom: 3px;
       background-color: white;
@@ -130,7 +133,7 @@ export class TrackedResultsView extends LitElement {
       background-color: #eb4538;
     }
     input:checked + .slider:before {
-      transform: translateX(18px); /* Ajustado para el nuevo tamaño */
+      transform: translateX(18px);
     }
     input:disabled + .slider {
         cursor: not-allowed;
@@ -153,7 +156,7 @@ export class TrackedResultsView extends LitElement {
       const results = await trackingService.getTrackedPeople();
       this.trackedPeople = results.map(r => {
         if (!r.personData.id) {
-          r.personData.id = r.dataAxleId; // Asegurarse de que haya un ID para navegación y tracking
+          r.personData.id = r.dataAxleId;
         }
         return r.personData;
       });
@@ -165,7 +168,6 @@ export class TrackedResultsView extends LitElement {
   }
 
   private _viewReport(person: Person) {
-    // Solo navegamos al reporte si no estamos en medio de actualizar el tracking de esa persona
     if (this.updatingTrackingId !== person.id) {
       stateService.persons = [person];
       Router.go(`/report/${person.id}`);
@@ -173,7 +175,7 @@ export class TrackedResultsView extends LitElement {
   }
 
   private async _handleTrackingChange(person: Person, e: Event) {
-    e.stopPropagation(); // Evitar que el clic se propague a la tarjeta y abra el reporte
+    e.stopPropagation();
     if (!person.id || this.updatingTrackingId === person.id) return;
 
     this.updatingTrackingId = person.id;
@@ -181,16 +183,12 @@ export class TrackedResultsView extends LitElement {
     const shouldTrack = checkbox.checked;
 
     try {
-      if (!shouldTrack) { // Si se desactiva el tracking
+      if (!shouldTrack) {
         await trackingService.untrackPerson(person.id);
-        // Actualizamos la lista para eliminar a la persona
         this.trackedPeople = this.trackedPeople.filter(p => p.id !== person.id);
       }
-      // Si se activa, no necesitamos hacer nada aquí porque la persona ya está en la lista.
-      // La lógica de `trackPerson` se maneja desde `report-view`.
     } catch (error) {
       console.error("Failed to update tracking status", error);
-      // Revertir el estado visual del switch en caso de error
       checkbox.checked = !shouldTrack;
     } finally {
       this.updatingTrackingId = null;
@@ -204,7 +202,7 @@ export class TrackedResultsView extends LitElement {
     return html`
       <div class="container">
         <breadcrumb-trail></breadcrumb-trail>
-        <h1 class="title">Tracked Results</h1>
+        <h1 class="title mt-5">Tracked Results</h1>
 
         ${this.trackedPeople.length === 0
           ? html`<div class="empty">You are not tracking anyone yet.</div>`
@@ -217,7 +215,8 @@ export class TrackedResultsView extends LitElement {
                         <label class="switch">
                             <input 
                                 type="checkbox" 
-                                .checked=${true} ?disabled=${this.updatingTrackingId === person.id}
+                                .checked=${true}
+                                ?disabled=${this.updatingTrackingId === person.id}
                                 @change=${(e: Event) => this._handleTrackingChange(person, e)}
                             >
                             <span class="slider round"></span>
@@ -231,7 +230,7 @@ export class TrackedResultsView extends LitElement {
                         ${person.age && person.gender ? html` | ` : ''}
                         ${person.gender === 'F' ? 'Female' : (person.gender === 'M' ? 'Male' : '')}
                       </p>
-                      ${person.city && person.state ? html`<p class="person-info">Location: ${person.city}, ${person.state}</p>` : ''}
+                      ${person.city && person.state ? html`<p class="person-info"><strong>Location:</strong> ${person.city}, ${person.state}</p>` : ''}
                     </div>
                   </div>
                 `)}

@@ -7,7 +7,7 @@ class BreadcrumbService {
   private _breadcrumbs: Breadcrumb[] = [{ label: 'Home', path: '/' }];
   private subscribers: Function[] = [];
   // Lista de rutas principales que no deben anidarse
-  private topLevelPaths = ['/', '/search-history', '/statistics'];
+  private topLevelPaths = ['/', '/search-history', '/statistics', '/tracked-results'];
 
   get breadcrumbs(): Breadcrumb[] {
     return this._breadcrumbs;
