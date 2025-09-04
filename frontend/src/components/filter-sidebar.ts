@@ -14,6 +14,7 @@ interface FilterFilters {
   ageMax?: number;
   address?: string;
   addressObj?: any;
+  skipAgeRange?: boolean;
 }
 
 @customElement('filter-sidebar')
@@ -27,6 +28,7 @@ export class FilterSidebar extends LitElement {
   @state() private selectedCity = '';
   @state() private ageMin = 18;
   @state() private ageMax = 65;
+  @state() private skipAgeRange = false;
   @state() private addressInput = '';
   @state() private addressObj: any = null;
   @state() private addressSuggestions: any[] = [];
@@ -71,7 +73,7 @@ export class FilterSidebar extends LitElement {
       border: 2px solid #4b5563;
       border-radius: 6px;
       font-size: 1rem;
-      transition: border-color 0.3s ease;
+      transition: all 0.3s ease;
       background-color: #374151;
       color: white;
     }
@@ -79,9 +81,10 @@ export class FilterSidebar extends LitElement {
       outline: none;
       border-color: #eb4538;
     }
-    select:disabled {
+    input:disabled, select:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+      background-color: #4b5563;
     }
     .age-inputs {
       display: flex;
@@ -125,6 +128,32 @@ export class FilterSidebar extends LitElement {
     .suggestion-item:hover {
       background-color: #f3f4f6;
     }
+    .form-group-checkbox {
+      display: flex;
+      align-items: center;
+      margin-top: -0.5rem;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      border-radius: 6px;
+      transition: background-color 0.2s;
+    }
+    .form-group-checkbox:hover {
+      background-color: #374151;
+    }
+    .form-group-checkbox input[type="checkbox"] {
+      width: 1.15em;
+      height: 1.15em;
+      margin-right: 0.75rem;
+      accent-color: #eb4538;
+      cursor: pointer;
+    }
+    .form-group-checkbox label {
+      margin-bottom: 0;
+      font-weight: normal;
+      color: #d1d5db;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
     ${unsafeCSS(mainStyles)}
   `;
 
@@ -138,6 +167,7 @@ export class FilterSidebar extends LitElement {
         this.ageMax = this.initialFilters.ageMax || 65;
         this.addressInput = this.initialFilters.address || '';
         this.addressObj = this.initialFilters.addressObj || null;
+        this.skipAgeRange = this.initialFilters.skipAgeRange || false;
         
         this.selectedState = this.initialFilters.state || '';
         await this.updateComplete;
@@ -149,6 +179,10 @@ export class FilterSidebar extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     clearTimeout(this._debounceTimer);
+  }
+  
+  private _handleSkipAgeToggle(e: Event) {
+    this.skipAgeRange = (e.target as HTMLInputElement).checked;
   }
 
   private _handleStateChange(e: Event) {
@@ -209,6 +243,7 @@ export class FilterSidebar extends LitElement {
       city: this.selectedCity,
       ageMin: this.ageMin,
       ageMax: this.ageMax,
+      skipAgeRange: this.skipAgeRange,
       address: this.addressInput,
       addressObj: this.addressObj
     };
@@ -248,9 +283,9 @@ export class FilterSidebar extends LitElement {
           <div class="form-group">
             <label>Filter by Age</label>
             <div class="age-inputs">
-              <input type="number" min="18" max="100" .value=${String(this.ageMin)} @input=${(e: Event) => this.ageMin = Number((e.target as HTMLInputElement).value)}>
+              <input type="number" min="18" max="100" .value=${String(this.ageMin)} @input=${(e: Event) => this.ageMin = Number((e.target as HTMLInputElement).value)} ?disabled=${this.skipAgeRange}>
               <span>to</span>
-              <input type="number" min="18" max="100" .value=${String(this.ageMax)} @input=${(e: Event) => this.ageMax = Number((e.target as HTMLInputElement).value)}>
+              <input type="number" min="18" max="100" .value=${String(this.ageMax)} @input=${(e: Event) => this.ageMax = Number((e.target as HTMLInputElement).value)} ?disabled=${this.skipAgeRange}>
             </div>
           </div>
           <div class="form-group">
@@ -273,6 +308,10 @@ export class FilterSidebar extends LitElement {
                 `)}
               </ul>
             ` : ''}
+          </div>
+          <div class="form-group-checkbox">
+            <input type="checkbox" id="skipAge" .checked=${this.skipAgeRange} @change=${this._handleSkipAgeToggle}>
+            <label for="skipAge">Omit age range</label>
           </div>
           <button type="submit" class="apply-button">Apply Filters</button>
         </form>

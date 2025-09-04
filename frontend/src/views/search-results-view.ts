@@ -50,7 +50,7 @@ export class SearchResultsView extends LitElement {
   }
 
   private prepareInitialFilters() {
-    const { searchQuery, searchType, searchFilters } = stateService;
+    const { searchQuery, searchType, searchFilters, skipAgeRange } = stateService;
     const filters: any = {};
 
     if (searchType === 'name' && typeof searchQuery === 'string') {
@@ -75,6 +75,7 @@ export class SearchResultsView extends LitElement {
         });
     }
 
+    filters.skipAgeRange = skipAgeRange;
     this.initialFilters = filters;
   }
   
@@ -149,7 +150,7 @@ export class SearchResultsView extends LitElement {
     if (filters.city) {
         propositions.push({ type: 'predicate', attribute: 'city', relation: 'matches', value: filters.city });
     }
-    if (filters.ageMin && filters.ageMax) {
+    if (!filters.skipAgeRange && filters.ageMin && filters.ageMax) {
         propositions.push({ type: 'predicate', attribute: 'age', relation: 'between', value: [String(filters.ageMin), String(filters.ageMax)] });
     }
     if (filters.addressObj?.properties) {
@@ -177,6 +178,7 @@ export class SearchResultsView extends LitElement {
     }
     
     stateService.searchFilters = apiFilters;
+    stateService.skipAgeRange = filters.skipAgeRange;
     stateService.currentPage = 1;
 
     await this.executeSearch(1, true);

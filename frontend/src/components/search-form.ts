@@ -196,7 +196,6 @@ export class SearchForm extends LitElement {
     } else {
       let detail: any = { type: this.searchType, value };
       
-      // Si la búsqueda es por dirección, extraemos y añadimos los filtros de estado y ciudad
       if (this.searchType === 'address' && this.addressObj?.properties) {
         const props = this.addressObj.properties;
         const state = props.region_code;
@@ -224,9 +223,9 @@ export class SearchForm extends LitElement {
   }
 
   private _handleFiltersSubmitted(e: CustomEvent) {
-    const { searchValue, filters } = e.detail;
+    const { searchValue, filters, skipAgeRange } = e.detail;
     const event = new CustomEvent('search-submitted', {
-      detail: { type: 'name', value: searchValue, filters },
+      detail: { type: 'name', value: searchValue, filters, skipAgeRange },
       bubbles: true,
       composed: true,
     });

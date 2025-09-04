@@ -161,15 +161,16 @@ export class HomeView extends LitElement {
     }
   }
 
-  async _handleSearch(e: CustomEvent<{ type: string; value: string | any; filters?: any }>) {
+  async _handleSearch(e: CustomEvent<{ type: string; value: string | any; filters?: any; skipAgeRange?: boolean }>) {
     stateService.newSearchPerformed = true;
 
-    const { type, value, filters } = e.detail;
+    const { type, value, filters, skipAgeRange } = e.detail;
     stateService.loading = true;
     stateService.error = null;
     stateService.searchQuery = value;
     stateService.searchType = type;
     stateService.searchFilters = filters;
+    stateService.skipAgeRange = skipAgeRange || false;
     stateService.persons = [];
     stateService.totalResults = 0;
     

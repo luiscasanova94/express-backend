@@ -344,7 +344,8 @@ export class NameFilterModal extends LitElement {
     const event = new CustomEvent('filters-submitted', {
       detail: {
         searchValue: this.searchValue,
-        filters: filters
+        filters: filters,
+        skipAgeRange: this.skipAgeRange
       },
       bubbles: true,
       composed: true
