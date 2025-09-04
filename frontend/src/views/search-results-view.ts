@@ -9,7 +9,7 @@ import { breadcrumbService } from '../services/breadcrumb.service';
 
 import '../components/filter-sidebar';
 import './results-view';
-import '../components/breadcrumb-trail'; // Importado
+import '../components/breadcrumb-trail';
 
 @customElement('search-results-view')
 export class SearchResultsView extends LitElement {

@@ -88,19 +88,32 @@ export class FilterSidebar extends LitElement {
     ${unsafeCSS(mainStyles)}
   `;
 
-  firstUpdated(changedProperties: Map<string | number | symbol, unknown>) {
-      if(changedProperties.has('initialFilters')) {
-          this.firstName = this.initialFilters.firstName || '';
-          this.lastName = this.initialFilters.lastName || '';
-          this.selectedState = this.initialFilters.state || '';
-          this.selectedCity = this.initialFilters.city || '';
-          this.ageMin = this.initialFilters.ageMin || 18;
-          this.ageMax = this.initialFilters.ageMax || 65;
+  // Se utiliza `updated` para reaccionar a los cambios en las propiedades
+  async updated(changedProperties: Map<string | number | symbol, unknown>) {
+    if (changedProperties.has('initialFilters')) {
+      const oldFilters = changedProperties.get('initialFilters') as FilterFilters | undefined;
+      // Solo actualiza el estado si los filtros realmente han cambiado
+      if (JSON.stringify(oldFilters) !== JSON.stringify(this.initialFilters)) {
+        this.firstName = this.initialFilters.firstName || '';
+        this.lastName = this.initialFilters.lastName || '';
+        this.ageMin = this.initialFilters.ageMin || 18;
+        this.ageMax = this.initialFilters.ageMax || 65;
+        
+        // 1. Establece el estado primero para que se actualice la lista de ciudades
+        this.selectedState = this.initialFilters.state || '';
+
+        // 2. Espera a que el DOM se actualice con la nueva lista de ciudades
+        await this.updateComplete;
+
+        // 3. Ahora que las opciones de ciudad existen, establece la ciudad seleccionada
+        this.selectedCity = this.initialFilters.city || '';
       }
+    }
   }
 
   private _handleStateChange(e: Event) {
     this.selectedState = (e.target as HTMLSelectElement).value;
+    // Resetea la ciudad cuando el estado cambia para forzar al usuario a re-seleccionar
     this.selectedCity = ''; 
   }
 
