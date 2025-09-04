@@ -547,15 +547,16 @@ export class ReportView extends LitElement {
         background-color: #2d2d2d;
         border: 1px solid #444;
         border-radius: 8px;
-        padding: 0 1.5rem;
+        padding: 0.5rem 1.5rem;
         margin-bottom: 1.5rem;
       }
-      .report-header breadcrumb-trail {
+        .report-header breadcrumb-trail {
         flex: 1;
-        margin-bottom: 0;
-        padding: 0;
-        background-color: transparent;
-        border: none;
+        /* Se definen las variables para anular los estilos del breadcrumb */
+        --breadcrumb-bg-color: transparent;
+        --breadcrumb-border: none;
+        --breadcrumb-padding: 0;
+        --breadcrumb-radius: 0;
       }
       .monitoring-switch-container {
         display: flex;

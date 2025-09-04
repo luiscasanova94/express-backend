@@ -24,16 +24,16 @@ export class BreadcrumbTrail extends LitElement {
   static styles = css`
     :host {
       display: block;
-      margin-bottom: 1.5rem; /* Espacio entre el breadcrumb y el contenido */
     }
     nav {
       display: flex;
       align-items: center;
       font-size: 0.875rem;
-      background-color: #2d2d2d; /* Fondo de la "caja" */
-      border: 1px solid #444;      /* Borde sutil */
-      border-radius: 8px;           /* Esquinas redondeadas */
-      padding: 0.75rem 1.5rem;      /* Espaciado interno */
+      /* Se usan variables CSS con valores por defecto */
+      background-color: var(--breadcrumb-bg-color, #2d2d2d);
+      border: var(--breadcrumb-border, 1px solid #444);
+      border-radius: var(--breadcrumb-radius, 8px);
+      padding: var(--breadcrumb-padding, 0.75rem 1.5rem);
     }
     a {
       color: #9ca3af;
