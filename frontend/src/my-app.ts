@@ -7,7 +7,6 @@ import mainStyles from './styles/main.css?inline';
 import './components/app-header';
 import './components/app-footer';
 import './components/app-sidebar';
-// Se elimina la importación de breadcrumb-trail de aquí
 import './views/home-view';
 import './views/about-view';
 import './views/report-view';
@@ -17,6 +16,7 @@ import './components/modal-element';
 import './views/search-history-view'; 
 import './views/search-results-view';
 import './views/statistics-view';
+import './views/tracked-results-view';
 
 @customElement('my-app')
 class MyApp extends LitElement {
@@ -128,6 +128,7 @@ class MyApp extends LitElement {
         { path: '/report/:id', component: 'report-view', action: authGuard },
         { path: '/search-history', component: 'search-history-view', action: authGuard },
         { path: '/statistics', component: 'statistics-view', action: authGuard },
+        { path: '/tracked-results', component: 'tracked-results-view', action: authGuard, },
       ]);
     }
   }

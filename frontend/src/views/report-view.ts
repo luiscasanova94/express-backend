@@ -10,8 +10,8 @@ import mapboxCss from 'mapbox-gl/dist/mapbox-gl.css?inline';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { ethnicityMap, ethnicGroupMap, languageMap, primaryLanguageMap, religiousAffiliationMap, countryAlpha2Map } from '../data/culture-catalogs.data';
 import { breadcrumbService } from '../services/breadcrumb.service';
-import '../components/breadcrumb-trail'; // Importado
-
+import { trackingService } from '../services/tracking.service';
+import '../components/breadcrumb-trail';
 
 const creditCardTypeMap: { [key: string]: { name: string; icon: string } } = {
     'travel_entertainment': {
@@ -334,8 +334,10 @@ export class ReportView extends LitElement {
   @state() private activeSection: string = '';
   @state() private activeLine: boolean = false;
   @state() private searchType: string | null = null;
+  @state() private isTracking = false;
+  @state() private isUpdatingTracking = false;
 
-  connectedCallback() {
+  async connectedCallback() {
     super.connectedCallback();
     breadcrumbService.navigate('Report', this.location.pathname);
     window.scrollTo(0, 0);
@@ -346,6 +348,42 @@ export class ReportView extends LitElement {
     this.searchType = stateService.searchType;
     if (this.searchType === 'phone') {
       this.activeLine = this.person?.cell_phones?.find(c => c.phone === stateService.searchQuery)?.active ?? false;
+    }
+    
+    if (this.person) {
+      this.checkTrackingStatus();
+    }
+  }
+
+  async checkTrackingStatus() {
+    if (!this.person?.id) return;
+    try {
+      const status = await trackingService.getTrackingStatus(this.person.id);
+      this.isTracking = status.isTracking;
+    } catch (error) {
+      console.error("Failed to check tracking status", error);
+    }
+  }
+
+  async _handleTrackingChange(e: Event) {
+    if (!this.person || this.isUpdatingTracking) return;
+
+    this.isUpdatingTracking = true;
+    const checkbox = e.target as HTMLInputElement;
+    const shouldTrack = checkbox.checked;
+
+    try {
+      if (shouldTrack) {
+        await trackingService.trackPerson(this.person);
+      } else {
+        await trackingService.untrackPerson(this.person.id);
+      }
+      this.isTracking = shouldTrack;
+    } catch (error) {
+      console.error("Failed to update tracking status", error);
+      checkbox.checked = !shouldTrack;
+    } finally {
+      this.isUpdatingTracking = false;
     }
   }
 
@@ -413,6 +451,7 @@ export class ReportView extends LitElement {
     unsafeCSS(mapboxCss),
     unsafeCSS(mainStyles),
     css`
+    
       /* Estilos para Desktop y Tablets */
       .report-wrapper { max-width: 1024px; margin: 2rem auto; padding: 0 1rem; display: flex; gap: 2rem; align-items: flex-start; }
       .left-column { display: flex; flex-direction: column; flex: 0 0 220px; position: sticky; top: 2rem; }
@@ -500,6 +539,77 @@ export class ReportView extends LitElement {
         color: #d1d5db;
         font-size: 0.8rem;
       }
+
+      .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #2d2d2d;
+        border: 1px solid #444;
+        border-radius: 8px;
+        padding: 0 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      .report-header breadcrumb-trail {
+        flex: 1;
+        margin-bottom: 0;
+        padding: 0;
+        background-color: transparent;
+        border: none;
+      }
+      .monitoring-switch-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .monitoring-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #d1d5db;
+      }
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+      }
+      .switch input { 
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #4b5563;
+        transition: .4s;
+      }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+      }
+      input:checked + .slider {
+        background-color: #eb4538;
+      }
+      input:checked + .slider:before {
+        transform: translateX(20px);
+      }
+      .slider.round {
+        border-radius: 24px;
+      }
+      .slider.round:before {
+        border-radius: 50%;
+      }
     `,
   ];
 
@@ -546,7 +656,21 @@ export class ReportView extends LitElement {
   private _renderContentSections() {
     return html`
       <div id="main-content-scroll-area" class="main-content">
-        <breadcrumb-trail class="mb-4"></breadcrumb-trail>
+        <div class="report-header">
+          <breadcrumb-trail></breadcrumb-trail>
+          <div class="monitoring-switch-container">
+            <span class="monitoring-label">Monitoring</span>
+            <label class="switch">
+              <input 
+                type="checkbox" 
+                .checked=${this.isTracking}
+                ?disabled=${this.isUpdatingTracking}
+                @change=${this._handleTrackingChange}
+              >
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
         ${reportSections.map(section => {
           const renderMethod = (this as any)[`_render${this._capitalize(section.id.replace(/_/g, ''))}Section`];
           const content = typeof renderMethod === 'function'
