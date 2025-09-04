@@ -58,8 +58,12 @@ export class SearchResultsView extends LitElement {
         filters.firstName = nameParts[0] || '';
         filters.lastName = nameParts.slice(1).join(' ') || '';
     }
+
+    if (searchType === 'address' && typeof searchQuery === 'object' && searchQuery?.properties) {
+        filters.address = searchQuery.properties.full_address;
+        filters.addressObj = searchQuery;
+    }
     
-    // Extrae filtros de estado/ciudad/edad si existen (para búsquedas de nombre o dirección)
     if(searchFilters?.propositions) {
         searchFilters.propositions.forEach((p: any) => {
             if(p.attribute === 'state') filters.state = p.value[0];
@@ -148,6 +152,15 @@ export class SearchResultsView extends LitElement {
     if (filters.ageMin && filters.ageMax) {
         propositions.push({ type: 'predicate', attribute: 'age', relation: 'between', value: [String(filters.ageMin), String(filters.ageMax)] });
     }
+    if (filters.addressObj?.properties) {
+        const props = filters.addressObj.properties;
+        if (props.address_line1) {
+            propositions.push({ type: 'predicate', attribute: 'street', relation: 'matches', value: props.address_line1 });
+        }
+        if (props.postcode) {
+             propositions.push({ type: 'predicate', attribute: 'postal_code', relation: 'matches', value: props.postcode });
+        }
+    }
 
     const apiFilters = {
         type: 'connective',
@@ -155,8 +168,14 @@ export class SearchResultsView extends LitElement {
         propositions: propositions
     };
     
-    stateService.searchType = 'name';
-    stateService.searchQuery = `${filters.firstName} ${filters.lastName}`.trim();
+    if (filters.address) {
+      stateService.searchType = 'address';
+      stateService.searchQuery = filters.addressObj;
+    } else {
+      stateService.searchType = 'name';
+      stateService.searchQuery = `${filters.firstName} ${filters.lastName}`.trim();
+    }
+    
     stateService.searchFilters = apiFilters;
     stateService.currentPage = 1;
 
@@ -181,6 +200,7 @@ export class SearchResultsView extends LitElement {
             <div class="sticky top-8">
               <filter-sidebar 
                 .initialFilters=${this.initialFilters}
+                .searchType=${stateService.searchType}
                 @filters-applied=${this._handleFiltersApplied}>
               </filter-sidebar>
             </div>
