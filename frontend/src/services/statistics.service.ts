@@ -8,6 +8,7 @@ export interface StatisticsResponse {
   totalCreditsUsed: number;
   startDate: string;
   endDate: string;
+  creditsLimit: number;
 }
 
 class StatisticsService {
@@ -22,7 +23,13 @@ class StatisticsService {
         headers: { 'Authorization': `Bearer ${token}` },
         params: { startDate, endDate }
       });
-      return response.data;
+      
+      // Agregar el límite de créditos desde las variables de entorno
+      const creditsLimit = parseInt(import.meta.env.VITE_CREDITS_LIMIT || '1000', 10);
+      return {
+        ...response.data,
+        creditsLimit
+      };
     } catch (error) {
       console.error('Failed to fetch statistics:', error);
       throw error;

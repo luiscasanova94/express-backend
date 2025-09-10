@@ -29,6 +29,7 @@ app.delete('/history/:id', authenticateToken, searchHistoryController.deleteSear
 
 // Rutas de Estadísticas
 app.get('/statistics', authenticateToken, searchHistoryController.getStatistics);
+app.post('/check-credits', authenticateToken, searchHistoryController.checkCredits);
 
 // Rutas de Monitoreo (Tracking)
 app.post('/tracking', authenticateToken, trackedPersonController.trackPerson);

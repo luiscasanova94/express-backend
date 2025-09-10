@@ -3,11 +3,13 @@ import { customElement, state } from 'lit/decorators.js';
 import { PersonService } from '../services/person.service';
 import { stateService } from '../services/state.service';
 import { searchHistoryService, SearchHistoryEntry } from '../services/search-history.service';
+import { creditsService } from '../services/credits.service';
 import { Router } from '@vaadin/router';
 import '../components/search-form';
 import '../components/loading-overlay';
 import '../components/modal-element';
 import '../components/searching-modal';
+import '../components/credits-alert-modal';
 import './results-view';
 import '../components/recent-searches';
 import { Person } from '../interfaces/person.interface.js';
@@ -18,6 +20,12 @@ export class HomeView extends LitElement {
   private personService: PersonService;
   @state() private recentHistory: SearchHistoryEntry[] = [];
   @state() private _isSubscribed = false;
+  @state() private showCreditsAlert = false;
+  @state() private creditsInfo = {
+    availableCredits: 0,
+    totalUsed: 0,
+    limit: 0
+  };
 
   private _subscription = () => this.requestUpdate();
 
@@ -91,6 +99,23 @@ export class HomeView extends LitElement {
     const offset = (stateService.currentPage - 1) * stateService.limit;
 
     try {
+      // Verificar créditos disponibles antes de hacer la búsqueda
+      if (stateService.newSearchPerformed) {
+        const creditsCheck = await creditsService.checkCredits(1); // Verificar al menos 1 crédito
+        
+        if (!creditsCheck.available) {
+          // Mostrar modal de alerta en lugar de lanzar error
+          this.creditsInfo = {
+            availableCredits: creditsCheck.availableCredits,
+            totalUsed: creditsCheck.totalUsed,
+            limit: creditsCheck.limit
+          };
+          this.showCreditsAlert = true;
+          stateService.loading = false;
+          return; // Salir de la función sin hacer la búsqueda
+        }
+      }
+
       let results: any = [];
       const { searchType, searchQuery, searchFilters, limit, sort } = stateService;
 
@@ -199,6 +224,16 @@ export class HomeView extends LitElement {
     }
   }
 
+  private _handleCreditsModalClose() {
+    console.log('_handleCreditsModalClose called');
+    this.showCreditsAlert = false;
+  }
+
+  private _handleNavigateToStatistics() {
+    this.showCreditsAlert = false;
+    Router.go('/statistics');
+  }
+
   render() {
     return html`
       <div class="max-w-[800px] mx-auto px-4 md:px-0">
@@ -218,6 +253,15 @@ export class HomeView extends LitElement {
       ></modal-element>
 
       <searching-modal ?active=${stateService.loading}></searching-modal>
+      
+      <credits-alert-modal 
+        ?isOpen=${this.showCreditsAlert}
+        .availableCredits=${this.creditsInfo.availableCredits}
+        .totalUsed=${this.creditsInfo.totalUsed}
+        .limit=${this.creditsInfo.limit}
+        @modal-closed=${this._handleCreditsModalClose}
+        @navigate-to-statistics=${this._handleNavigateToStatistics}
+      ></credits-alert-modal>
     `;
   }
 

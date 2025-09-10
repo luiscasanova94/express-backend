@@ -38,8 +38,15 @@ class SearchHistoryService {
           'Authorization': `Bearer ${token}`
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save search history:', error);
+      
+      // Si es un error de créditos insuficientes, lanzar un error específico
+      if (error.response?.status === 400 && error.response?.data?.error === 'Insufficient credits') {
+        throw new Error(`Insufficient credits: ${error.response.data.details.availableCredits} available, ${error.response.data.details.requestedCredits} requested`);
+      }
+      
+      throw error;
     }
   }
 

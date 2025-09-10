@@ -28,6 +28,17 @@ export class StatisticsView extends LitElement {
       margin-bottom: 2rem;
       border-bottom: 2px solid #444;
       padding-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .credits-info {
+      background-color: #2d2d2d;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      color: #ebb85e;
     }
     .date-range-picker {
       display: flex;
@@ -105,7 +116,14 @@ export class StatisticsView extends LitElement {
     return html`
       <div class="container">
         <breadcrumb-trail></breadcrumb-trail>
-        <h1 class="title">Statistics</h1>
+        <h1 class="title">
+          Statistics
+          ${this.stats ? html`
+            <div class="credits-info">
+              Limit: ${this.stats.creditsLimit} credits
+            </div>
+          ` : ''}
+        </h1>
         <div class="date-range-picker">
           <input type="date" .value=${this.startDate} @input=${(e: any) => this.startDate = e.target.value}>
           <input type="date" .value=${this.endDate} @input=${(e: any) => this.endDate = e.target.value}>

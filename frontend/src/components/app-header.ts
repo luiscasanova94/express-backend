@@ -4,11 +4,17 @@ import { LitElement, html, css, unsafeCSS } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { Router } from '@vaadin/router';
 import { authService } from '../services/auth.service';
+import { creditsService } from '../services/credits.service';
 import mainStyles from '../styles/main.css?inline';
 
 @customElement('app-header')
 export class AppHeader extends LitElement {
   @state() private isAuthenticated = false;
+  @state() private creditsInfo = {
+    used: 0,
+    limit: 1000,
+    available: 1000
+  };
 
   static styles = css`
     nav {
@@ -37,6 +43,29 @@ export class AppHeader extends LitElement {
 
     .nav-links a:hover, .nav-links button:hover {
       color: #f98368;
+    }
+
+    .credits-counter {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 20px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #495057;
+      margin-left: 1rem;
+    }
+
+    .credits-counter.low {
+      background-color: #fff3cd;
+      border-color: #ffeaa7;
+      color: #856404;
+    }
+
+    .credits-counter.critical {
+      background-color: #f8d7da;
+      border-color: #f5c6cb;
+      color: #721c24;
     }
     
     .hamburger-button {
@@ -69,6 +98,9 @@ export class AppHeader extends LitElement {
     super.connectedCallback();
     this.isAuthenticated = await authService.isAuthenticated();
     window.addEventListener('vaadin-router-location-changed', this.handleAuthChange);
+    if (this.isAuthenticated) {
+      await this.loadCreditsInfo();
+    }
   }
 
   disconnectedCallback() {
@@ -78,6 +110,29 @@ export class AppHeader extends LitElement {
 
   private handleAuthChange = async () => {
     this.isAuthenticated = await authService.isAuthenticated();
+    if (this.isAuthenticated) {
+      await this.loadCreditsInfo();
+    }
+  }
+
+  private async loadCreditsInfo() {
+    try {
+      const creditsCheck = await creditsService.checkCredits(0);
+      this.creditsInfo = {
+        used: creditsCheck.totalUsed,
+        limit: creditsCheck.limit,
+        available: creditsCheck.availableCredits
+      };
+    } catch (error) {
+      console.error('Failed to load credits info:', error);
+    }
+  }
+
+  private getCreditsCounterClass(): string {
+    const percentage = (this.creditsInfo.used / this.creditsInfo.limit) * 100;
+    if (percentage >= 90) return 'critical';
+    if (percentage >= 70) return 'low';
+    return '';
   }
 
   private async handleLogout() {
@@ -110,7 +165,12 @@ export class AppHeader extends LitElement {
           <div class="nav-links">
             <a href="/" class="home-link">Home</a>
             ${this.isAuthenticated
-              ? html`<button @click=${this.handleLogout}>Logout</button>`
+              ? html`
+                  <span class="credits-counter ${this.getCreditsCounterClass()}">
+                    ${this.creditsInfo.used}/${this.creditsInfo.limit}
+                  </span>
+                  <button @click=${this.handleLogout}>Logout</button>
+                `
               : ''}
           </div>
         </div>

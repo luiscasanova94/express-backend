@@ -1,10 +1,51 @@
 const { SearchHistory } = require('../db/models');
 const { Op } = require('sequelize');
 
+// Función para verificar créditos disponibles
+const checkCreditsAvailable = async (userId, creditsToUse) => {
+  try {
+    const CREDITS_LIMIT = parseInt(process.env.CREDITS_LIMIT || '1000', 10);
+    
+    // Obtener créditos totales usados por el usuario
+    const totalCreditsUsed = await SearchHistory.sum('credits_used', {
+      where: { userId }
+    }) || 0;
+    
+    const availableCredits = CREDITS_LIMIT - totalCreditsUsed;
+    
+    
+    return {
+      available: availableCredits >= creditsToUse,
+      availableCredits,
+      totalUsed: totalCreditsUsed,
+      limit: CREDITS_LIMIT
+    };
+  } catch (error) {
+    console.error('Error checking credits:', error);
+    return { available: false, error: 'Error checking credits' };
+  }
+};
+
 exports.createSearchHistory = async (req, res) => {
   try {
     const { date, keyword, type, resultType, state, response, sort, offset, page, count, filters } = req.body;
     const credits_used = response.documents ? response.documents.length : 0;
+    
+    // Verificar créditos disponibles antes de crear el historial
+    const creditsCheck = await checkCreditsAvailable(req.user.id, credits_used);
+    
+    if (!creditsCheck.available) {
+      return res.status(400).json({ 
+        error: 'Insufficient credits',
+        details: {
+          availableCredits: creditsCheck.availableCredits,
+          requestedCredits: credits_used,
+          totalUsed: creditsCheck.totalUsed,
+          limit: creditsCheck.limit
+        }
+      });
+    }
+    
     const newSearch = await SearchHistory.create({
       userId: req.user.id,
       date,
@@ -125,5 +166,21 @@ exports.getStatistics = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: 'Error fetching statistics' });
+    }
+};
+
+// Endpoint para verificar créditos disponibles antes de hacer búsquedas
+exports.checkCredits = async (req, res) => {
+    try {
+        const { estimatedCredits } = req.body;
+        const creditsToCheck = estimatedCredits || 1; // Por defecto verificar 1 crédito
+        
+        
+        const creditsCheck = await checkCreditsAvailable(req.user.id, creditsToCheck);
+        
+        res.status(200).json(creditsCheck);
+    } catch (error) {
+        console.error('Error checking credits:', error);
+        res.status(500).json({ error: 'Error checking credits' });
     }
 };
